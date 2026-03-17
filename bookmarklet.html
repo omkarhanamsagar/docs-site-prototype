@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docs Prototype Bookmarklet Installer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+      color: #1c2b34;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .card {
+      max-width: 640px;
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      padding: 48px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1c2b34;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: rgba(28,43,52,0.6);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+    .bookmarklet-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #9B33EF, #646DF9);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: grab;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 12px rgba(99,44,166,0.25);
+    }
+    .bookmarklet-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99,44,166,0.35);
+    }
+    .bookmarklet-link:active { cursor: grabbing; }
+    .drag-hint {
+      display: inline-block;
+      font-size: 13px;
+      color: rgba(28,43,52,0.5);
+      margin-top: 12px;
+    }
+    .steps {
+      margin-top: 36px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(28,43,52,0.08);
+    }
+    .steps h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(28,43,52,0.5);
+      font-size: 12px;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+    .step-number {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(99,44,166,0.08);
+      color: #632CA6;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: rgba(28,43,52,0.8);
+      padding-top: 3px;
+    }
+    .step-text code {
+      background: rgba(28,43,52,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .step-text a {
+      color: #5e6dd6;
+      text-decoration: none;
+    }
+    .step-text a:hover { text-decoration: underline; }
+    .note {
+      margin-top: 32px;
+      padding: 16px 20px;
+      background: rgba(99,44,166,0.04);
+      border-left: 3px solid #632CA6;
+      border-radius: 0 8px 8px 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(28,43,52,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Docs Site Prototype</h1>
+    <p class="subtitle">
+      Inject your reimagined Products section into the live
+      <a href="https://docs.datadoghq.com/" style="color:#5e6dd6;text-decoration:none;">docs.datadoghq.com</a>
+      homepage to test it in context.
+    </p>
+
+    <a class="bookmarklet-link" id="bookmarklet" href="#">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+      </svg>
+      Inject Docs Prototype
+    </a>
+    <br />
+    <span class="drag-hint">Drag this to your bookmarks bar, or right-click &rarr; Bookmark this link</span>
+
+    <div class="steps">
+      <h2>How to use</h2>
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-text">
+          Make sure the prototype dev server is running:<br />
+          <code>cd ~/Downloads/docs-site-prototype && npm run dev</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-text">
+          Drag the purple button above to your bookmarks bar.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-text">
+          Navigate to <a href="https://docs.datadoghq.com/">docs.datadoghq.com</a>.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-text">
+          Click the bookmarklet. The Products section is replaced with your prototype.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-text">
+          Resize the browser to test responsiveness. Use the floating
+          <strong>Restore Original</strong> button to toggle back.
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Tip:</strong> Click the bookmarklet again to toggle between the original and your prototype.
+      The prototype toolbar (top-right corner) lets you tweak descriptions, scaling, and more.
+    </div>
+  </div>
+
+  <script>
+    // Load the bookmarklet source and set it as the href
+    fetch('/bookmarklet.js')
+      .then(function (r) { return r.text(); })
+      .then(function (code) {
+        // Minify: strip comments and collapse whitespace
+        var minified = code
+          .replace(/\/\/.*$/gm, '')       // single-line comments
+          .replace(/\/\*[\s\S]*?\*\//g, '') // multi-line comments
+          .replace(/\s+/g, ' ')           // collapse whitespace
+          .trim();
+        document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent(minified);
+      });
+  </script>
+</body>
+</html>
