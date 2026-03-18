@@ -45,18 +45,25 @@ function SubheaderColumn({ subheader }: { subheader: DocSubheader }) {
   );
 }
 
-function HoverCard({ cols, children }: { cols: number; children: React.ReactNode }) {
+function HoverCard({ cols, gridGapH, children }: { cols: number; gridGapH: number; children: React.ReactNode }) {
   const [hovered, setHovered] = React.useState(false);
+  const cardPadding = 32;
+  // To align internal columns with the outer 4-column grid, the internal gap
+  // must bridge: cardPadding (right of col N) + outerGap + cardPadding (left
+  // of col N+1) — but since we're inside one card, the internal gap needs to
+  // equal outerGap + 2*cardPadding to keep column widths identical to the
+  // outer grid's column widths.
+  const internalGap = gridGapH + 2 * cardPadding;
   return (
     <div
-      className="p-[32px]"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: 1,
         display: 'grid',
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 48,
+        gap: internalGap,
+        padding: cardPadding,
         background: hovered ? 'var(--card-bg-hover)' : 'var(--card-bg)',
         backdropFilter: 'blur(var(--card-blur))',
         WebkitBackdropFilter: 'blur(var(--card-blur))',
@@ -1104,7 +1111,7 @@ export default function App() {
                         </div>
 
                         {/* Card panel */}
-                        <HoverCard cols={header.cols}>
+                        <HoverCard cols={header.cols} gridGapH={designVars.gridGapH}>
                           {headerColumns.map((colSubheaders, colIndex) => (
                             <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
                               {colSubheaders.map((subheader, subIdx) => (
