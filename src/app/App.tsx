@@ -8,72 +8,170 @@ import aiSvg from "../imports/svg-i0gohc99sa";
 import securitySvg from "../imports/svg-dnnhtunjky";
 import svgPaths from "../imports/svg-64nu9567k0";
 
+const isEngHandoff = import.meta.env.VITE_ENG_HANDOFF === '1';
+
 // ─── Shared components ───
 
-interface DocLink { text: string }
+interface DocLink { text: string; desc?: string; shortDesc?: string }
 interface DocSubheader { title: string; links: DocLink[] }
 
-function LinkItem({ link }: { link: DocLink }) {
+function LinkItem({ link, noHover = false, descLength = 'short', disclosure = 'off', sectionHovered = false }: {
+  link: DocLink; noHover?: boolean; descLength?: DescLength; disclosure?: DisclosureMode; sectionHovered?: boolean;
+}) {
+  const [hovered, setHovered] = React.useState(false);
   const words = link.text.split(" ");
   const leadingWords = words.slice(0, -1).join(" ");
   const lastWord = words[words.length - 1];
+
+  const descText = descLength === 'short' ? link.shortDesc : link.desc;
+  const showInline = disclosure === 'always' || (disclosure === 'hover-section' && sectionHovered);
+  const showTooltip = disclosure === 'hover-link' && hovered;
+
   return (
-    <a href="#" className="group/link font-['Noto_Sans_SemiBold:Regular',sans-serif] leading-[150%] text-[16px] text-[#5e6dd6] hover:text-[#3F4CA5] hover:no-underline break-words">
-      {leadingWords && <>{leadingWords} </>}
-      <span className="whitespace-nowrap">
-        {lastWord}
-        <span className="inline-flex items-center align-middle ml-1.5 size-[16px] overflow-clip relative opacity-0 -translate-x-2 transition-all duration-200 ease-out group-hover/link:opacity-100 group-hover/link:translate-x-0">
-          <svg className="absolute inset-[9.81%_2.44%_9.82%_2.6%] block size-[calc(100%-12.41%)] w-auto h-auto" fill="none" preserveAspectRatio="none" viewBox="0 0 15.1925 12.8593">
-            <path d={arrowSvgPaths.p149a3b80} fill="currentColor" />
-          </svg>
+    <div
+      data-inspect="link"
+      style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'relative' }}
+      onMouseEnter={disclosure === 'hover-link' ? () => setHovered(true) : undefined}
+      onMouseLeave={disclosure === 'hover-link' ? () => setHovered(false) : undefined}
+    >
+      <a
+        href="#"
+        className={noHover
+          ? "leading-[150%] text-[16px] text-[#5e6dd6] no-underline break-words"
+          : "group/link leading-[150%] text-[16px] text-[#5e6dd6] hover:text-[#3F4CA5] hover:no-underline break-words"
+        }
+        style={{ fontFamily: linkFont }}
+      >
+        {leadingWords && <>{leadingWords} </>}
+        <span className="whitespace-nowrap">
+          {lastWord}
+          {!noHover && (
+            <span className="inline-flex items-center align-middle ml-1.5 size-[16px] overflow-clip relative opacity-0 -translate-x-2 transition-all duration-200 ease-out group-hover/link:opacity-100 group-hover/link:translate-x-0">
+              <svg className="absolute inset-[9.81%_2.44%_9.82%_2.6%] block size-[calc(100%-12.41%)] w-auto h-auto" fill="none" preserveAspectRatio="none" viewBox="0 0 15.1925 12.8593">
+                <path d={arrowSvgPaths.p149a3b80} fill="currentColor" />
+              </svg>
+            </span>
+          )}
         </span>
-      </span>
-    </a>
+      </a>
+      {disclosure === 'always' && descText && (
+        <span data-inspect="description" style={{ fontFamily: linkFont, fontSize: 16, fontWeight: 400, lineHeight: '150%', color: 'rgba(28,43,52,0.68)' }}>
+          {descText}
+        </span>
+      )}
+      {disclosure === 'hover-section' && descText && (
+        <div style={{
+          opacity: sectionHovered ? 1 : 0,
+          transform: sectionHovered ? 'translateY(0)' : 'translateY(-4px)',
+          transition: 'opacity 250ms ease-out, transform 250ms ease-out',
+        }}>
+          <span style={{ fontFamily: linkFont, fontSize: 16, fontWeight: 400, lineHeight: '150%', color: 'rgba(28,43,52,0.68)' }}>
+            {descText}
+          </span>
+        </div>
+      )}
+      {disclosure === 'hover-link' && descText && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: -12,
+          marginTop: 4,
+          padding: '8px 12px',
+          background: '#fff',
+          borderRadius: 6,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.08)',
+          zIndex: 100,
+          maxWidth: 280,
+          pointerEvents: 'none',
+          opacity: hovered ? 1 : 0,
+          transform: hovered ? 'translateY(0)' : 'translateY(-8px)',
+          transition: 'opacity 200ms ease-out, transform 200ms ease-out',
+        }}>
+          <span style={{ fontFamily: linkFont, fontSize: 14, fontWeight: 400, lineHeight: '150%', color: 'rgba(28,43,52,0.85)' }}>
+            {descText}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
-function SubheaderColumn({ subheader }: { subheader: DocSubheader }) {
+function SubheaderColumn({ subheader, noHover = false, descLength = 'short', disclosure = 'off', sectionHovered = false }: {
+  subheader: DocSubheader; noHover?: boolean; descLength?: DescLength; disclosure?: DisclosureMode; sectionHovered?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-5">
-      <h3 className="font-['Noto_Sans:Bold',sans-serif] leading-[20px] text-[12px] text-[rgba(28,43,52,0.68)] tracking-[0.5px] uppercase">
-        {subheader.title}
-      </h3>
+      {subheader.title && (
+        <h3 data-inspect="subsection-header" className="leading-[20px] text-[12px] text-[rgba(28,43,52,0.68)] tracking-[0.5px] uppercase" style={{ fontFamily: subheaderFont, fontWeight: isHelvetica ? 700 : undefined }}>
+          {subheader.title}
+        </h3>
+      )}
       <div className="flex flex-col gap-5">
-        {subheader.links.map((link, i) => <LinkItem key={i} link={link} />)}
+        {subheader.links.map((link, i) => <LinkItem key={i} link={link} noHover={noHover} descLength={descLength} disclosure={disclosure} sectionHovered={sectionHovered} />)}
       </div>
     </div>
   );
 }
 
-function HoverCard({ cols, gridGapH, children }: { cols: number; gridGapH: number; children: React.ReactNode }) {
+function HoverCard({ cols, gridGapH, children, hoverEnabled = true, onSectionHover }: { cols: number; gridGapH: number; children: React.ReactNode; hoverEnabled?: boolean; onSectionHover?: (h: boolean) => void }) {
   const [hovered, setHovered] = React.useState(false);
+  const isHovered = hoverEnabled && hovered;
   const cardPadding = 32;
-  // To align internal columns with the outer 4-column grid, the internal gap
-  // must bridge: cardPadding (right of col N) + outerGap + cardPadding (left
-  // of col N+1) — but since we're inside one card, the internal gap needs to
-  // equal outerGap + 2*cardPadding to keep column widths identical to the
-  // outer grid's column widths.
   const internalGap = gridGapH + 2 * cardPadding;
+  const growX = 1.008;
+  const growY = 1.02;
+  const shrinkX = 1 / growX;
+  const shrinkY = 1 / growY;
+  const enterEase = 'cubic-bezier(0.25, 1.4, 0.55, 1)';
+  const leaveEase = 'cubic-bezier(0.4, 0.06, 0.2, 1)';
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      data-inspect="card"
+      onMouseEnter={hoverEnabled ? () => { setHovered(true); onSectionHover?.(true); } : undefined}
+      onMouseLeave={hoverEnabled ? () => { setHovered(false); onSectionHover?.(false); } : undefined}
       style={{
-        flex: 1,
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: internalGap,
-        padding: cardPadding,
-        background: hovered ? 'var(--card-bg-hover)' : 'var(--card-bg)',
+        height: '100%',
+        background: isHovered ? 'var(--card-bg-hover)' : 'var(--card-bg)',
         backdropFilter: 'blur(var(--card-blur))',
         WebkitBackdropFilter: 'blur(var(--card-blur))',
         border: 'var(--card-border)',
         borderRadius: 'var(--card-radius)',
-        boxShadow: hovered ? 'var(--card-shadow-hover)' : 'var(--card-shadow)',
-        transition: 'background 200ms ease, box-shadow 200ms ease',
+        boxShadow: isHovered ? 'var(--card-shadow-hover)' : 'var(--card-shadow)',
+        transform: isHovered ? `scale(${growX}, ${growY})` : 'scale(1)',
+        transition: hoverEnabled
+          ? (isHovered
+            ? `background 300ms ${enterEase}, box-shadow 300ms ${enterEase}, transform 800ms ${enterEase}`
+            : `background 300ms ${leaveEase}, box-shadow 300ms ${leaveEase}, transform 450ms ${leaveEase}`)
+          : 'none',
       }}
     >
-      {children}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        columnGap: internalGap,
+        rowGap: 48,
+        padding: cardPadding,
+        transform: isHovered ? `scale(${shrinkX}, ${shrinkY})` : 'scale(1)',
+        transition: hoverEnabled
+          ? (isHovered ? `transform 800ms ${enterEase}` : `transform 450ms ${leaveEase}`)
+          : 'none',
+      }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SectionCardWrapper({ disclosure, style, children }: {
+  disclosure: DisclosureMode;
+  style?: React.CSSProperties;
+  children: (secHovered: { value: boolean; set: (h: boolean) => void }) => React.ReactNode;
+}) {
+  const [sectionHovered, setSectionHovered] = React.useState(false);
+  return (
+    <div style={style}>
+      {children({ value: sectionHovered, set: setSectionHovered })}
     </div>
   );
 }
@@ -180,7 +278,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   'Security': <SecurityIcon />,
   'Software Delivery': <SoftwareDeliveryIcon />,
   'Service Management': <ServiceManagementIcon />,
-  'Platform Capabilities': <PlatformCapabilitiesIcon />,
+  'Platform & Administration': <PlatformCapabilitiesIcon />,
 };
 
 // ─── Design variables ───
@@ -204,6 +302,9 @@ interface DesignVars {
   gridGapV: number;
   cardPadding: number;
   subsectionGap: number;
+  hoverTopOpacity: number;
+  hoverBottomOpacity: number;
+  hoverFadeStart: number;
 }
 
 const DEFAULT_DESIGN: DesignVars = {
@@ -225,6 +326,9 @@ const DEFAULT_DESIGN: DesignVars = {
   gridGapV: 40,
   cardPadding: 32,
   subsectionGap: 40,
+  hoverTopOpacity: 90,
+  hoverBottomOpacity: 70,
+  hoverFadeStart: 30,
 };
 
 // ─── Gradient Blobs ───
@@ -241,7 +345,7 @@ interface GradientBlob {
 
 const BLOB_COLORS = ['#632CA6', '#646DF9', '#9B33EF', '#8B5CF6', '#4F46E5'];
 
-const DEFAULT_BLOBS: GradientBlob[] = [
+const CONCEPT_1_BLOBS: GradientBlob[] = [
   { id: 1,  x: 12, y: 4,  width: 55, height: 35, color: '#632CA6', opacity: 8  },
   { id: 2,  x: 82, y: 2,  width: 45, height: 30, color: '#646DF9', opacity: 7  },
   { id: 3,  x: 50, y: 12, width: 60, height: 25, color: '#9B33EF', opacity: 4  },
@@ -255,7 +359,86 @@ const DEFAULT_BLOBS: GradientBlob[] = [
   { id: 11, x: 20, y: 92, width: 50, height: 30, color: '#646DF9', opacity: 6  },
 ];
 
-let nextBlobId = 100;
+// Concept 2: bottom-center glow — warm peach-pink left, soft lavender right,
+// colors hug the edges as they climb, fading toward center-top.
+const CONCEPT_2_BLOBS: GradientBlob[] = [
+  { id: 1, x: 50, y: 82, width: 161, height: 90, color: '#F5D0E0', opacity: 22 },
+  { id: 3, x: 26, y: 79, width: 153, height: 75, color: '#FBCFE8', opacity: 20 },
+  { id: 4, x: 75, y: 80, width: 149, height: 75, color: '#DDD6FE', opacity: 16 },
+  { id: 5, x: 8,  y: 60, width: 60,  height: 200, color: '#FB923C', opacity: 14 },
+  { id: 6, x: 92, y: 60, width: 60,  height: 200, color: '#A78BFA', opacity: 13 },
+];
+
+const CONCEPT_2_DESIGN: DesignVars = {
+  bgWarmth: 0,
+  bgSaturation: 100,
+  bgBrightness: 100,
+  blobScale: 120,
+  blobOpacity: 100,
+  cardOpacity: 55,
+  cardBlur: 24,
+  cardBorder: 85,
+  shadowY: 4,
+  shadowBlur: 8,
+  shadowSpread: -4,
+  shadowOpacity: 5,
+  cardRadius: 8,
+  expandedBoost: 37,
+  gridGapH: 28,
+  gridGapV: 40,
+  cardPadding: 32,
+  subsectionGap: 40,
+  hoverTopOpacity: 100,
+  hoverBottomOpacity: 70,
+  hoverFadeStart: 50,
+};
+
+// Concept 3: same color story as concept 2 but radiating from the top, trailing down
+const CONCEPT_3_BLOBS: GradientBlob[] = [
+  // Core glow — huge overlapping washes anchored at the top center
+  { id: 1,  x: 50,  y: 15,  width: 120, height: 90, color: '#F5D0E0', opacity: 22 },
+  { id: 2,  x: 50,  y: 20,  width: 100, height: 80, color: '#E9D5FF', opacity: 18 },
+  { id: 3,  x: 35,  y: 18,  width: 90,  height: 75, color: '#FBCFE8', opacity: 20 },
+  { id: 4,  x: 65,  y: 18,  width: 90,  height: 75, color: '#DDD6FE', opacity: 18 },
+
+  // Color identity — warm left, cool right
+  { id: 5,  x: 20,  y: 28,  width: 70,  height: 60, color: '#FED7AA', opacity: 14 },
+  { id: 6,  x: 80,  y: 28,  width: 70,  height: 60, color: '#C4B5FD', opacity: 15 },
+
+  // Downward reach — carry color into the mid-page
+  { id: 7,  x: 25,  y: 50,  width: 85,  height: 55, color: '#FBCFE8', opacity: 10 },
+  { id: 8,  x: 75,  y: 50,  width: 85,  height: 55, color: '#E9D5FF', opacity: 10 },
+  { id: 9,  x: 50,  y: 55,  width: 100, height: 50, color: '#F5D0E0', opacity: 7  },
+
+  // Lower whisper — barely there, gentle fade out
+  { id: 10, x: 40,  y: 75,  width: 90,  height: 40, color: '#E9D5FF', opacity: 4  },
+  { id: 11, x: 60,  y: 80,  width: 80,  height: 35, color: '#FBCFE8', opacity: 3  },
+];
+
+const conceptParam = new URLSearchParams(window.location.search).get('concept');
+const fontParam = new URLSearchParams(window.location.search).get('font');
+const showHeader = new URLSearchParams(window.location.search).get('header') !== 'false';
+type DescLength = 'short' | 'full';
+type DisclosureMode = 'off' | 'hover-link' | 'hover-section' | 'always';
+const descLengthParam = new URLSearchParams(window.location.search).get('desclen');
+const initialDescLength: DescLength = descLengthParam === 'full' ? 'full' : 'short';
+const disclosureParam = new URLSearchParams(window.location.search).get('disclosure');
+const initialDisclosure: DisclosureMode = disclosureParam === 'hover-link' ? 'hover-link' : disclosureParam === 'hover-section' ? 'hover-section' : disclosureParam === 'always' ? 'always' : 'off';
+const DEFAULT_BLOBS = conceptParam === '3' ? CONCEPT_3_BLOBS : (conceptParam === '2' || conceptParam === '4') ? CONCEPT_2_BLOBS : CONCEPT_1_BLOBS;
+const INITIAL_DESIGN = conceptParam === '2' || conceptParam === '3' || conceptParam === '4' ? CONCEPT_2_DESIGN : DEFAULT_DESIGN;
+
+const FONT_NOTO = "'Noto_Sans_SemiBold:Regular',sans-serif";
+const FONT_NOTO_BOLD = "'Noto_Sans:Bold',sans-serif";
+const FONT_NOTO_REGULAR = "'Noto_Sans:Regular',sans-serif";
+const FONT_HELVETICA = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+
+const isHelvetica = fontParam !== 'noto';
+const linkFont = isHelvetica ? FONT_HELVETICA : FONT_NOTO;
+const headerFont = isHelvetica ? FONT_HELVETICA : FONT_NOTO;
+const subheaderFont = isHelvetica ? FONT_HELVETICA : FONT_NOTO_BOLD;
+const countFont = isHelvetica ? FONT_HELVETICA : FONT_NOTO_REGULAR;
+
+let nextBlobId = 200;
 function shuffleBlobs(blobs: GradientBlob[]): GradientBlob[] {
   return blobs.map(b => ({
     ...b,
@@ -281,7 +464,7 @@ function computeCssVars(vars: DesignVars): Record<string, string> {
   const shadowHover = `0 ${vars.shadowY + 2}px ${Math.round(vars.shadowBlur * 1.4)}px ${vars.shadowSpread + 1}px rgba(0,0,0,${hoverO.toFixed(4)})`;
   return {
     '--card-bg': `rgb(255 255 255 / ${(vars.cardOpacity / 100).toFixed(3)})`,
-    '--card-bg-hover': `rgb(255 255 255 / 1)`,
+    '--card-bg-hover': `linear-gradient(to bottom, rgb(255 255 255 / ${(vars.hoverTopOpacity / 100).toFixed(2)}) 0%, rgb(255 255 255 / ${(vars.hoverTopOpacity / 100).toFixed(2)}) ${vars.hoverFadeStart}%, rgb(255 255 255 / ${(vars.hoverBottomOpacity / 100).toFixed(2)}) 100%)`,
     '--card-bg-expanded': `rgb(255 255 255 / ${Math.min(1, vars.cardOpacity / 100 + vars.expandedBoost / 100).toFixed(3)})`,
     '--card-blur': `${vars.cardBlur}px`,
     '--card-border': `1px solid rgba(0, 0, 0, ${(0.08 * vars.cardBorder / 100).toFixed(4)})`,
@@ -314,6 +497,9 @@ const SLIDER_DEFS: { section: string; label: string; prop: keyof DesignVars; min
   { section: 'GLASS CARDS', label: 'Radius', prop: 'cardRadius', min: 0, max: 32, unit: 'px' },
   { section: 'GLASS CARDS', label: 'Padding', prop: 'cardPadding', min: 12, max: 48, unit: 'px' },
   { section: 'GLASS CARDS', label: 'Expand boost', prop: 'expandedBoost', min: 0, max: 60, unit: '%' },
+  { section: 'GLASS CARDS', label: 'Hover top α', prop: 'hoverTopOpacity', min: 50, max: 100, unit: '%' },
+  { section: 'GLASS CARDS', label: 'Hover bottom α', prop: 'hoverBottomOpacity', min: 0, max: 100, unit: '%' },
+  { section: 'GLASS CARDS', label: 'Fade start', prop: 'hoverFadeStart', min: 0, max: 80, unit: '%' },
   { section: 'GRID LAYOUT', label: 'H Gap', prop: 'gridGapH', min: 0, max: 64, unit: 'px' },
   { section: 'GRID LAYOUT', label: 'V Gap', prop: 'gridGapV', min: 0, max: 80, unit: 'px' },
   { section: 'GRID LAYOUT', label: 'Subsection gap', prop: 'subsectionGap', min: 16, max: 64, unit: 'px' },
@@ -545,9 +731,9 @@ function DesignToolbar({ vars, onChange, onReset, blobs, onBlobsChange }: {
                     onChange={(v) => updateBlob(selectedBlob.id, { x: v })} />
                   <SliderRow label="Y position" value={selectedBlob.y} min={0} max={100} unit="%"
                     onChange={(v) => updateBlob(selectedBlob.id, { y: v })} />
-                  <SliderRow label="Width" value={selectedBlob.width} min={10} max={80} unit="%"
+                  <SliderRow label="Width" value={selectedBlob.width} min={5} max={200} unit="%"
                     onChange={(v) => updateBlob(selectedBlob.id, { width: v })} />
-                  <SliderRow label="Height" value={selectedBlob.height} min={10} max={60} unit="%"
+                  <SliderRow label="Height" value={selectedBlob.height} min={5} max={200} unit="%"
                     onChange={(v) => updateBlob(selectedBlob.id, { height: v })} />
                   <SliderRow label="Opacity" value={selectedBlob.opacity} min={1} max={25} unit="%"
                     onChange={(v) => updateBlob(selectedBlob.id, { opacity: v })} />
@@ -589,20 +775,20 @@ function DesignToolbar({ vars, onChange, onReset, blobs, onBlobsChange }: {
 
 // Placeholder sub-section names for scaling tests
 const placeholderSubNames = [
-  "ANALYTICS", "SECURITY", "COMPLIANCE", "NETWORKING", "AUTOMATION",
-  "WORKFLOWS", "INTEGRATIONS", "PIPELINES", "GOVERNANCE", "ALERTING",
-  "COST OPS", "SERVICE MESH", "EDGE COMPUTE", "DATA LAKE", "ML OPS",
+  "MONITORING", "ANALYTICS", "COMPLIANCE", "AUTOMATION", "INTEGRATIONS",
+  "PIPELINES", "GOVERNANCE", "ALERTING", "NETWORKING", "DATA",
+  "OPERATIONS", "TESTING", "DEPLOYMENT", "PERFORMANCE", "INTELLIGENCE",
 ];
 
-// Placeholder link names for scaling tests
 const placeholderLinkNames = [
-  "Performance Dashboard", "Threat Detection", "Audit Compliance Manager",
-  "Traffic Analysis", "Workflow Orchestrator", "Pipeline Manager",
-  "Data Governance Suite", "Alert Configuration", "Cost Optimization",
-  "Service Discovery", "Edge Routing", "Data Lake Explorer",
-  "Model Registry", "Incident Response", "Capacity Planning",
-  "Resource Allocation", "Dependency Mapping", "Change Management",
-  "SLA Monitoring", "Access Control Manager",
+  "Resource Explorer", "Anomaly Detection", "Compliance Dashboard",
+  "Workflow Builder", "Integration Hub", "Pipeline Orchestrator",
+  "Policy Manager", "Alert Routing", "Network Analyzer",
+  "Data Catalog", "Operations Center", "Test Runner",
+  "Deployment Manager", "Performance Insights", "Threat Intelligence",
+  "Usage Analytics", "Service Health", "Change Tracker",
+  "SLA Dashboard", "Access Manager", "Cost Explorer",
+  "Capacity Planner", "Dependency Graph", "Audit Logger",
 ];
 
 function generateExtraSubheaders(count: number, linksPerSub: number, offset: number = 0) {
@@ -646,34 +832,39 @@ const observabilityData = {
     {
       title: "INFRASTRUCTURE",
       links: [
-        { text: "Infrastructure" },
-        { text: "Metrics" },
-        { text: "Container Monitoring" },
-        { text: "Serverless" },
-        { text: "Network Monitoring" },
-        { text: "Cloud Cost Management" },
-        { text: "Cloudcraft" },
-        { text: "Storage Management" },
+        { text: "Infrastructure", desc: "View the health and performance of your hosts and infrastructure components", shortDesc: "Host and infra health" },
+        { text: "Metrics", desc: "Explore, search, and create distributions for your metrics", shortDesc: "Explore and distribute metrics" },
+        { text: "Container Monitoring", desc: "Monitor the health, performance, and security of your containerized environments", shortDesc: "Container health and security" },
+        { text: "Serverless", desc: "Detect and resolve performance issues in your serverless applications", shortDesc: "Serverless performance" },
+        { text: "Network Monitoring", desc: "Use tagged objects to collect and graph data about your network traffic", shortDesc: "Network traffic data" },
+        { text: "Cloud Cost Management", desc: "Take control of your cloud spend with unified observability and cost data", shortDesc: "Cloud spend control" },
+        { text: "Cloudcraft", desc: "Visualize and diagram your cloud infrastructure in real time", shortDesc: "Cloud infra diagrams" },
+        { text: "Storage Management", desc: "Optimize and troubleshoot your cloud storage spend, usage, and data freshness", shortDesc: "Cloud storage optimization" },
       ],
     },
     {
       title: "APPLICATIONS",
       links: [
-        { text: "APM" },
-        { text: "Universal Service Monitoring" },
-        { text: "Continuous Profiler" },
-        { text: "Database Monitoring" },
-        { text: "Data Streams Monitoring" },
-        { text: "Data Observability" },
+        { text: "APM", desc: "Explore out-of-the-box performance dashboards and distributed traces", shortDesc: "Distributed traces and dashboards" },
+        { text: "Universal Service Monitoring", desc: "Discover, map, and monitor services without changing code", shortDesc: "Codeless service monitoring" },
+        { text: "Continuous Profiler", desc: "Compare performance snapshots and investigate bottlenecks", shortDesc: "Performance bottlenecks" },
+      ],
+    },
+    {
+      title: "DATA",
+      links: [
+        { text: "Database Monitoring", desc: "Explore enriched dashboards, query metrics, and query samples", shortDesc: "Query metrics and samples" },
+        { text: "Data Streams Monitoring", desc: "Track and improve performance of your data streaming pipelines", shortDesc: "Streaming pipeline performance" },
+        { text: "Data Observability", desc: "Monitor data quality, performance, and cost to detect anomalies and prevent downstream issues", shortDesc: "Data quality monitoring" },
       ],
     },
     {
       title: "LOGS",
       links: [
-        { text: "Log Management" },
-        { text: "Sensitive Data Scanner" },
-        { text: "Observability Pipelines" },
-        { text: "Error Tracking" },
+        { text: "Log Management", desc: "Process, monitor, and archive your ingested logs", shortDesc: "Log processing and archival" },
+        { text: "Sensitive Data Scanner", desc: "Detect and redact sensitive data like PII, API keys, and credit card numbers across your telemetry", shortDesc: "PII detection and redaction" },
+        { text: "Observability Pipelines", desc: "Manage and monitor your telemetry pipelines", shortDesc: "Telemetry pipeline management" },
+        { text: "Error Tracking", desc: "Identify critical errors and accelerate resolution across web, mobile, and backend", shortDesc: "Critical error resolution" },
       ],
     },
   ],
@@ -687,21 +878,21 @@ const digitalExperienceData = {
     {
       title: "SYNTHETIC TESTING",
       links: [
-        { text: "Synthetic Monitoring" },
-        { text: "Mobile App Testing" },
+        { text: "Synthetic Monitoring", desc: "Ensure uptime, flag regional issues, and test application performance", shortDesc: "Uptime and performance tests" },
+        { text: "Mobile App Testing", desc: "Monitor user journeys and business transactions in mobile applications", shortDesc: "Mobile user journey testing" },
       ],
     },
     {
       title: "REAL USER MONITORING",
       links: [
-        { text: "Real User Monitoring" },
-        { text: "Session Replay" },
+        { text: "Real User Monitoring", desc: "Capture, observe, and analyze the user experience of your applications", shortDesc: "Frontend user experience" },
+        { text: "Session Replay", desc: "Capture and visually replay the user experience of your users", shortDesc: "Visual session playback" },
       ],
     },
     {
       title: "PRODUCT ANALYTICS",
       links: [
-        { text: "Product Analytics" },
+        { text: "Product Analytics", desc: "Gain insight into user behavior and make data-driven product decisions", shortDesc: "User behavior insights" },
       ],
     },
   ],
@@ -717,9 +908,9 @@ const secondarySections = [
       {
         title: "AI",
         links: [
-          { text: "Bits AI Agents" },
-          { text: "Watchdog" },
-          { text: "LLM Observability" },
+          { text: "Bits AI Agents", desc: "Your agentic teammate that automates development, security, and operational workflows", shortDesc: "Automated AI workflows" },
+          { text: "Watchdog", desc: "Detect and surface application and infrastructure anomalies", shortDesc: "Anomaly detection" },
+          { text: "LLM Observability", desc: "Trace, monitor, and secure your LLM applications", shortDesc: "LLM monitoring and security" },
         ],
       },
     ],
@@ -732,22 +923,22 @@ const secondarySections = [
       {
         title: "CODE SECURITY",
         links: [
-          { text: "Code Security" },
+          { text: "Code Security", desc: "Detect and fix vulnerabilities in your code, dependencies, and infrastructure as code", shortDesc: "Code vulnerability detection" },
         ],
       },
       {
         title: "CLOUD SECURITY",
         links: [
-          { text: "Cloud Security" },
-          { text: "Workload Protection" },
+          { text: "Cloud Security", desc: "Continuously audit configurations, assess identity risks, and detect threats across your cloud infrastructure", shortDesc: "Cloud posture and threats" },
+          { text: "Workload Protection", desc: "Monitor file, network, and process activity to detect real-time threats to your infrastructure", shortDesc: "Runtime threat detection" },
         ],
       },
       {
         title: "CLOUD SIEM",
         links: [
-          { text: "Cloud SIEM" },
-          { text: "App and API Protection" },
-          { text: "Sensitive Data Scanner" },
+          { text: "Cloud SIEM", desc: "Detect, investigate, and respond to security threats across your cloud and on-premises systems", shortDesc: "Threat detection and response" },
+          { text: "App and API Protection", desc: "Detect and block threats targeting your production applications and APIs in real time", shortDesc: "App and API threat blocking" },
+          { text: "Sensitive Data Scanner", desc: "Detect and redact sensitive data like PII, API keys, and credit card numbers across your telemetry", shortDesc: "PII detection and redaction" },
         ],
       },
     ],
@@ -760,19 +951,19 @@ const secondarySections = [
       {
         title: "CI/CD",
         links: [
-          { text: "CI Visibility" },
-          { text: "Test Optimization" },
-          { text: "Continuous Testing" },
-          { text: "Code Coverage" },
+          { text: "CI Visibility", desc: "Monitor the health and performance of your CI pipelines", shortDesc: "CI pipeline health" },
+          { text: "Test Optimization", desc: "Detect flaky tests and identify commits introducing flaky tests", shortDesc: "Flaky test detection" },
+          { text: "Continuous Testing", desc: "Perform codeless integration and end-to-end testing with CI/CD providers", shortDesc: "Codeless E2E testing" },
+          { text: "Code Coverage", desc: "Visualize coverage data trends and block PR merges based on coverage thresholds", shortDesc: "Coverage trends and gates" },
         ],
       },
       {
         title: "DEVELOPER EFFICIENCY",
         links: [
-          { text: "Internal Developer Portal" },
-          { text: "DORA Metrics" },
-          { text: "IDE Plugins" },
-          { text: "Feature Flags" },
+          { text: "Internal Developer Portal", desc: "Unify telemetry, metadata, and workflows to accelerate delivery", shortDesc: "Service catalog and ownership" },
+          { text: "DORA Metrics", desc: "Measure and improve your organization's software delivery processes", shortDesc: "Delivery performance metrics" },
+          { text: "IDE Plugins", desc: "Interact with Datadog services directly from your IDE as you code", shortDesc: "In-editor Datadog access" },
+          { text: "Feature Flags", desc: "Toggle features, run A/B tests, and gradually roll out functionality without code deployments", shortDesc: "Feature rollouts and A/B tests" },
         ],
       },
     ],
@@ -785,54 +976,54 @@ const secondarySections = [
       {
         title: "INCIDENT RESPONSE",
         links: [
-          { text: "Incident Management" },
-          { text: "On-Call" },
-          { text: "Status Pages" },
+          { text: "Incident Management", desc: "Identify, analyze, and mitigate disruptive incidents in your organization", shortDesc: "Incident triage and mitigation" },
+          { text: "On-Call", desc: "Route and escalate alerts to the right team members with on-call schedules and paging", shortDesc: "Scheduling and paging" },
+          { text: "Status Pages", desc: "Communicate service availability and incident updates to your users and stakeholders", shortDesc: "Service status communication" },
+          { text: "Event Management", desc: "Track notable changes and alerts in your applications and infrastructure", shortDesc: "Change and alert tracking" },
         ],
       },
       {
         title: "ACTIONS",
         links: [
-          { text: "Workflow Automation" },
-          { text: "App Builder" },
-          { text: "Case Management" },
-          { text: "Service Level Objectives" },
+          { text: "Workflow Automation", desc: "Automate and orchestrate processes across your tech stack", shortDesc: "Cross-stack orchestration" },
+          { text: "App Builder", desc: "Create low-code applications to streamline your internal tools", shortDesc: "Low-code internal tools" },
+          { text: "Case Management", desc: "Triage, track, and remediate issues with centralized ownership and team collaboration", shortDesc: "Issue tracking and triage" },
+          { text: "Service Level Objectives", desc: "Define and track performance targets to deliver a consistent customer experience", shortDesc: "Performance target tracking" },
         ],
       },
     ],
   },
   {
-    title: "Platform Capabilities",
+    title: "Platform & Administration",
     description: "Extend, customize, and manage Datadog across your organization",
     descriptionHighlight: "Extend, customize, and manage",
     subheaders: [
       {
-        title: "GETTING STARTED",
+        title: "CORE PLATFORM",
         links: [
-          { text: "Integrations" },
-          { text: "OpenTelemetry" },
-          { text: "API" },
-          { text: "Extend Datadog" },
-          { text: "Partners" },
+          { text: "Dashboards", desc: "Visualize, analyze, and generate insights about your data", shortDesc: "Data visualization" },
+          { text: "Notebooks", desc: "Create rich-text documents with live graphs for investigations, postmortems, and runbooks", shortDesc: "Live investigation docs" },
+          { text: "Monitors and Alerting", desc: "Create, edit, and manage your monitors and notifications", shortDesc: "Alert configuration" },
+          { text: "Mobile App", desc: "View Datadog alerts, incidents, and more on your mobile device", shortDesc: "Mobile alerts and incidents" },
+          { text: "CoScreen", desc: "Share and interact with application windows for pair programming and incident management", shortDesc: "Collaborative screen sharing" },
         ],
       },
       {
-        title: "COLLABORATE",
+        title: "EXTEND",
         links: [
-          { text: "Dashboards" },
-          { text: "Notebooks" },
-          { text: "Monitors and Alerting" },
-          { text: "Mobile App" },
-          { text: "CoScreen" },
-          { text: "Event Management" },
+          { text: "Integrations", desc: "Gather data about your applications, services, and systems", shortDesc: "Connect your stack" },
+          { text: "API", desc: "Try the Datadog API", shortDesc: "Programmatic access" },
+          { text: "OpenTelemetry", desc: "Pipe your OpenTelemetry metrics, logs, and traces into Datadog", shortDesc: "OTel data ingestion" },
+          { text: "Extend Datadog", desc: "Extend the Datadog platform", shortDesc: "Custom extensions" },
+          { text: "Partners", desc: "Learn about best practices and get started monitoring your clients' environments", shortDesc: "Partner onboarding" },
         ],
       },
       {
         title: "GOVERN",
         links: [
-          { text: "Account Management" },
-          { text: "Data Security" },
-          { text: "Fleet Automation" },
+          { text: "Fleet Automation", desc: "Remotely configure, upgrade, and manage your Agents at scale", shortDesc: "Agent management at scale" },
+          { text: "Account Management", desc: "Manage org-based settings, billing, and data access controls", shortDesc: "Org settings and billing" },
+          { text: "Data Security", desc: "Learn how Datadog protects your data", shortDesc: "Data protection practices" },
         ],
       },
     ],
@@ -840,50 +1031,335 @@ const secondarySections = [
 ];
 
 // ─── Grid row definitions ───
-// Each row defines: section headers (with title + column span) and the 4 columns of subsections
+// Each column is an array of "layers". Each layer is an array of subsections.
+// All columns render their Nth layer at the same vertical position (aligned row).
 interface GridRowDef {
   headers: { title: string; cols: number }[];
-  columns: DocSubheader[][];  // 4 entries, each is an array of subsections stacked vertically
+  columns: DocSubheader[][][]; // columns[colIdx][layerIdx] = subsections in that layer
+  subsectionLayout: 'horizontal' | 'vertical-2col' | 'vertical-1col';
 }
 
-const GRID_ROWS: GridRowDef[] = [
+// ─── Section metadata for dynamic layout ───
+interface SectionMeta {
+  key: string;
+  title: string;
+  baseCols: number;
+  maxCols: number;
+  baseGroups: DocSubheader[][];
+  baseGroupsExpanded?: DocSubheader[][];
+  seedOffset: number;
+}
+
+const SECTIONS: SectionMeta[] = [
   {
-    headers: [{ title: 'Observability', cols: 3 }, { title: 'Digital Experience', cols: 1 }],
-    columns: [
+    key: 'obs', title: 'Observability', baseCols: 3, maxCols: 4,
+    baseGroups: [
+      observabilityData.subheaders.filter(s => s.title === 'INFRASTRUCTURE'),
+      observabilityData.subheaders.filter(s => s.title === 'APPLICATIONS' || s.title === 'DATA'),
+      observabilityData.subheaders.filter(s => s.title === 'LOGS'),
+    ],
+    baseGroupsExpanded: [
       observabilityData.subheaders.filter(s => s.title === 'INFRASTRUCTURE'),
       observabilityData.subheaders.filter(s => s.title === 'APPLICATIONS'),
       observabilityData.subheaders.filter(s => s.title === 'LOGS'),
-      digitalExperienceData.subheaders,
+      observabilityData.subheaders.filter(s => s.title === 'DATA'),
     ],
+    seedOffset: 0,
   },
   {
-    headers: [{ title: 'AI', cols: 1 }, { title: 'Security', cols: 3 }],
-    columns: [
-      secondarySections[0].subheaders, // AI
+    key: 'dx', title: 'Digital Experience', baseCols: 1, maxCols: 4,
+    baseGroups: [
+      digitalExperienceData.subheaders.filter(s => s.title === 'SYNTHETIC TESTING'),
+      digitalExperienceData.subheaders.filter(s => s.title === 'REAL USER MONITORING'),
+      digitalExperienceData.subheaders.filter(s => s.title === 'PRODUCT ANALYTICS'),
+    ],
+    seedOffset: 7,
+  },
+  {
+    key: 'AI', title: 'AI', baseCols: 1, maxCols: 4,
+    baseGroups: [
+      secondarySections[0].subheaders,
+    ],
+    seedOffset: 14,
+  },
+  {
+    key: 'Security', title: 'Security', baseCols: 3, maxCols: 4,
+    baseGroups: [
       secondarySections[1].subheaders.filter(s => s.title === 'CODE SECURITY'),
       secondarySections[1].subheaders.filter(s => s.title === 'CLOUD SECURITY'),
       secondarySections[1].subheaders.filter(s => s.title === 'CLOUD SIEM'),
     ],
+    seedOffset: 21,
   },
   {
-    headers: [{ title: 'Software Delivery', cols: 2 }, { title: 'Service Management', cols: 2 }],
-    columns: [
+    key: 'Software Delivery', title: 'Software Delivery', baseCols: 2, maxCols: 4,
+    baseGroups: [
       secondarySections[2].subheaders.filter(s => s.title === 'CI/CD'),
       secondarySections[2].subheaders.filter(s => s.title === 'DEVELOPER EFFICIENCY'),
+    ],
+    seedOffset: 28,
+  },
+  {
+    key: 'Service Management', title: 'Service Management', baseCols: 2, maxCols: 4,
+    baseGroups: [
       secondarySections[3].subheaders.filter(s => s.title === 'INCIDENT RESPONSE'),
       secondarySections[3].subheaders.filter(s => s.title === 'ACTIONS'),
     ],
+    seedOffset: 35,
   },
   {
-    headers: [{ title: 'Platform Capabilities', cols: 3 }],
-    columns: [
-      secondarySections[4].subheaders.filter(s => s.title === 'GETTING STARTED'),
-      secondarySections[4].subheaders.filter(s => s.title === 'COLLABORATE'),
+    key: 'Platform & Administration', title: 'Platform & Administration', baseCols: 3, maxCols: 4,
+    baseGroups: [
+      secondarySections[4].subheaders.filter(s => s.title === 'CORE PLATFORM'),
+      secondarySections[4].subheaders.filter(s => s.title === 'EXTEND'),
       secondarySections[4].subheaders.filter(s => s.title === 'GOVERN'),
-      [],
     ],
+    seedOffset: 42,
   },
 ];
+
+function getLayeredColumns(
+  section: SectionMeta,
+  allocatedCols: number,
+  extras: DocSubheader[],
+): DocSubheader[][][] {
+  const groups = section.baseGroups;
+  const baseCols = section.baseCols;
+  const baseLayer: DocSubheader[][] = Array.from({ length: allocatedCols }, () => []);
+
+  if (allocatedCols >= groups.length) {
+    groups.forEach((group, i) => {
+      baseLayer[i].push(...group);
+    });
+  } else {
+    groups.forEach((group, i) => {
+      baseLayer[i % allocatedCols].push(...group);
+    });
+  }
+
+  const usedBaseCols = Math.min(groups.length, allocatedCols);
+  const newColSlots = Math.max(0, allocatedCols - usedBaseCols);
+  const layer0Extras = extras.slice(0, newColSlots);
+  const remaining = extras.slice(newColSlots);
+
+  layer0Extras.forEach((sub, i) => {
+    baseLayer[usedBaseCols + i].push(sub);
+  });
+
+  const layers: DocSubheader[][][] = [baseLayer];
+
+  let overflow = [...remaining];
+  while (overflow.length > 0) {
+    const wave = overflow.slice(0, allocatedCols);
+    overflow = overflow.slice(allocatedCols);
+    const layer: DocSubheader[][] = Array.from({ length: allocatedCols }, () => []);
+    wave.forEach((sub, i) => {
+      layer[i] = [sub];
+    });
+    layers.push(layer);
+  }
+
+  const columns: DocSubheader[][][] = Array.from({ length: allocatedCols }, () => []);
+  for (let layerIdx = 0; layerIdx < layers.length; layerIdx++) {
+    for (let colIdx = 0; colIdx < allocatedCols; colIdx++) {
+      columns[colIdx].push(layers[layerIdx][colIdx]);
+    }
+  }
+
+  return columns;
+}
+
+function estimateSectionHeight(section: SectionMeta, extras: DocSubheader[], allocatedCols: number): number {
+  const cols = getLayeredColumns(section, allocatedCols, extras);
+  return Math.max(...cols.map(layers =>
+    layers.flat().reduce((h, sub) => h + 1 + sub.links.length, 0)
+  ));
+}
+
+function enumerateAllocations(n: number, total: number): number[][] {
+  if (n === 1) return [[total]];
+  const results: number[][] = [];
+  for (let i = 1; i <= total - (n - 1); i++) {
+    for (const rest of enumerateAllocations(n - 1, total - i)) {
+      results.push([i, ...rest]);
+    }
+  }
+  return results;
+}
+
+function computeLayout(extraSubs: Record<string, number>, extraLinksPerSub: number, heightThreshold: number, totalCols: number = 4, containerWidth: number = 1336): GridRowDef[] {
+  type SectionItem = { section: SectionMeta; allocatedCols: number; extras: DocSubheader[] };
+
+  const GRID_GAP = 28;
+  const CARD_PADDING = 32;
+  const OUTER_PADDING = containerWidth <= 480 ? 20 : 48;
+  const MIN_COL_WIDTH = 140;
+
+  // Calculate how wide each grid column is at this container width
+  const contentWidth = containerWidth - 2 * OUTER_PADDING;
+  const gridColWidth = (contentWidth - (totalCols - 1) * GRID_GAP) / totalCols;
+
+  // For a section spanning `spanCols` grid columns containing `internalCols` content columns,
+  // check if the internal columns are wide enough
+  function fitsComfortably(spanCols: number, internalCols: number): boolean {
+    const cardWidth = spanCols * gridColWidth + (spanCols - 1) * GRID_GAP;
+    const availableForContent = cardWidth - 2 * CARD_PADDING;
+    const perInternalCol = internalCols > 1
+      ? (availableForContent - (internalCols - 1) * (GRID_GAP + 2 * CARD_PADDING)) / internalCols
+      : availableForContent;
+    return perInternalCol >= MIN_COL_WIDTH;
+  }
+
+  // 1. Prepare sections — when extras are added, expand merged groups back out
+  const allItems: SectionItem[] = SECTIONS.map(section => {
+    const extraCount = extraSubs[section.key] || 0;
+    const extras = generateExtraSubheaders(extraCount, extraLinksPerSub, section.seedOffset);
+    const effectiveSection = (extraCount > 0 && section.baseGroupsExpanded)
+      ? { ...section, baseGroups: section.baseGroupsExpanded, baseCols: Math.max(section.baseCols, section.baseGroupsExpanded.length) }
+      : section;
+    const baseCols = Math.min(effectiveSection.baseCols, totalCols);
+    return { section: effectiveSection, allocatedCols: baseCols, extras };
+  });
+
+  // 2. Sequential packing with height-threshold splitting
+  const remaining = allItems.map(item => ({ ...item }));
+  const packedRows: SectionItem[][] = [];
+
+  while (remaining.length > 0) {
+    const first = remaining.shift()!;
+    const row: SectionItem[] = [first];
+    let rowCols = first.allocatedCols;
+
+    while (remaining.length > 0 && rowCols + remaining[0].allocatedCols <= totalCols) {
+      const next = remaining.shift()!;
+      row.push(next);
+      rowCols += next.allocatedCols;
+    }
+
+    // Height-threshold check for multi-section rows (order-preserving)
+    if (row.length > 1) {
+      const heights = row.map(item =>
+        estimateSectionHeight(item.section, item.extras, item.allocatedCols)
+      );
+      const minH = Math.min(...heights);
+      const maxH = Math.max(...heights);
+      const ratio = minH > 0 ? maxH / minH : Infinity;
+
+      if (ratio > heightThreshold) {
+        const allocations = enumerateAllocations(row.length, totalCols);
+        let bestAlloc: number[] | null = null;
+        let bestRatio = ratio;
+
+        for (const alloc of allocations) {
+          const wasteful = row.some((item, i) => {
+            const maxUseful = item.section.baseGroups.length + item.extras.length;
+            return alloc[i] > maxUseful;
+          });
+          if (wasteful) continue;
+
+          const hs = row.map((item, i) =>
+            estimateSectionHeight(item.section, item.extras, alloc[i])
+          );
+          const mn = Math.min(...hs);
+          const mx = Math.max(...hs);
+          const r = mn > 0 ? mx / mn : Infinity;
+          if (r < bestRatio) {
+            bestRatio = r;
+            bestAlloc = alloc;
+          }
+        }
+
+        if (bestAlloc && bestRatio <= heightThreshold) {
+          row.forEach((item, i) => { item.allocatedCols = bestAlloc![i]; });
+          packedRows.push(row);
+          continue;
+        }
+
+        const tallestIdx = heights.indexOf(maxH);
+        const beforeTallest = row.slice(0, tallestIdx);
+        const tallest = row[tallestIdx];
+        const afterTallest = row.slice(tallestIdx + 1);
+
+        if (beforeTallest.length > 0) {
+          packedRows.push(beforeTallest);
+        }
+
+        tallest.allocatedCols = totalCols;
+        packedRows.push([tallest]);
+
+        remaining.unshift(...afterTallest);
+        continue;
+      }
+    }
+
+    packedRows.push(row);
+  }
+
+  // 3. Width-overflow check: break apart multi-section rows where columns are too narrow
+  const widthChecked: SectionItem[][] = [];
+  for (const row of packedRows) {
+    if (row.length <= 1) {
+      widthChecked.push(row);
+      continue;
+    }
+    // Check if any section in this row has columns too narrow for its content
+    const overflows = row.some(item => {
+      const internalCols = Math.min(item.section.baseGroups.length, item.allocatedCols);
+      return !fitsComfortably(item.allocatedCols, Math.max(internalCols, 1));
+    });
+
+    if (overflows) {
+      // Break each section onto its own row
+      for (const item of row) {
+        widthChecked.push([item]);
+      }
+    } else {
+      widthChecked.push(row);
+    }
+  }
+
+  // 4. Determine GLOBAL subsection layout based on viewport width.
+  //    When the most column-heavy section can't fit its subsections horizontally,
+  //    ALL sections switch to the same vertical mode for consistency.
+  const LINK_COL_GAP = 24;
+  const maxInternalCols = Math.max(...allItems.map(item =>
+    Math.min(item.section.baseGroups.length, totalCols)
+  ));
+
+  let globalLayout: GridRowDef['subsectionLayout'] = 'horizontal';
+  if (maxInternalCols > 1 && !fitsComfortably(totalCols, maxInternalCols)) {
+    const fullCardWidth = totalCols * gridColWidth + (totalCols - 1) * GRID_GAP;
+    const fullContent = fullCardWidth - 2 * CARD_PADDING;
+    const twoColLinkWidth = (fullContent - LINK_COL_GAP) / 2;
+    globalLayout = twoColLinkWidth >= MIN_COL_WIDTH ? 'vertical-2col' : 'vertical-1col';
+  }
+
+  // 5. Solo sections: at tablet (all solo) span totalCols for full-width positioning.
+  //    At desktop, keep allocatedCols from packing/splitting (already correct).
+  const allSolo = widthChecked.every(row => row.length === 1);
+  const maxBaseCols = Math.max(...allItems.map(item => item.section.baseGroups.length));
+  if (allSolo) {
+    for (const row of widthChecked) {
+      row[0].allocatedCols = totalCols;
+    }
+  }
+
+  // 6. Build GridRowDef[] from width-checked rows
+  return widthChecked.map(row => {
+    const headers: GridRowDef['headers'] = [];
+    const columns: DocSubheader[][][] = [];
+
+    for (const item of row) {
+      headers.push({ title: item.section.title, cols: item.allocatedCols });
+      const sectionCols = getLayeredColumns(item.section, item.allocatedCols, item.extras);
+      columns.push(...sectionCols);
+    }
+
+    while (columns.length < totalCols) columns.push([[]]);
+
+    return { headers, columns, subsectionLayout: globalLayout };
+  });
+}
 
 // Reusable stepper row for the toolbar
 function StepperRow({ label, value, onChange, min = 0, max = 15 }: {
@@ -912,15 +1388,539 @@ const SECTION_LABELS: Record<string, string> = {
   obs: 'Observability',
   dx: 'Digital Exp',
   ...Object.fromEntries(secondarySections.map(s => [s.title, s.title])),
+  'Platform & Administration': 'Platform',
 };
 
 const isEmbedded = window.parent !== window;
 
+const BREAKPOINTS = [
+  { label: 'Mobile', width: 375, icon: '📱' },
+  { label: 'Tablet', width: 768, icon: '📋' },
+  { label: 'Desktop', width: 1336, icon: '🖥' },
+  { label: 'Full', width: 0, icon: '↔' },
+] as const;
+
+function ResponsiveResizer({ children, viewportWidth, setViewportWidth, visible = true }: { children: React.ReactNode; viewportWidth: number; setViewportWidth: (w: number) => void; visible?: boolean }) {
+  const [dragging, setDragging] = React.useState<'left' | 'right' | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const startXRef = React.useRef(0);
+  const startWidthRef = React.useRef(0);
+  const dragSideRef = React.useRef<'left' | 'right' | null>(null);
+
+  const isConstrained = viewportWidth > 0;
+  const activeLabel = !isConstrained ? 'Full' : BREAKPOINTS.find(b => b.width === viewportWidth)?.label ?? `${viewportWidth}px`;
+
+  React.useEffect(() => {
+    if (!dragging) return;
+
+    const onMove = (e: MouseEvent) => {
+      const maxW = window.innerWidth - 48;
+      const dx = e.clientX - startXRef.current;
+      const delta = dragSideRef.current === 'right' ? dx * 2 : -dx * 2;
+      const newWidth = Math.max(320, Math.min(maxW, startWidthRef.current + delta));
+      setViewportWidth(Math.round(newWidth));
+    };
+
+    const onUp = () => {
+      setDragging(null);
+      dragSideRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragging]);
+
+  const startDrag = (side: 'left' | 'right', e: React.MouseEvent) => {
+    e.preventDefault();
+    startXRef.current = e.clientX;
+    startWidthRef.current = containerRef.current?.offsetWidth ?? viewportWidth;
+    dragSideRef.current = side;
+    setDragging(side);
+  };
+
+  const handleStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 12,
+    cursor: 'ew-resize',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  };
+
+  const handleBarStyle: React.CSSProperties = {
+    width: 4,
+    height: 48,
+    borderRadius: 4,
+    background: 'rgba(94, 109, 214, 0.35)',
+    transition: 'background 0.15s',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+      {/* Resizable viewport */}
+      <div style={{
+        position: 'relative',
+        width: isConstrained ? viewportWidth : '100%',
+        maxWidth: '100%',
+        transition: dragging ? 'none' : 'width 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+      }}>
+        {visible && isConstrained && (
+          <>
+            {/* Left handle */}
+            <div
+              style={{ ...handleStyle, left: -16 }}
+              onMouseDown={e => startDrag('left', e)}
+            >
+              <div style={{
+                ...handleBarStyle,
+                background: dragging === 'left' ? 'rgba(94, 109, 214, 0.7)' : handleBarStyle.background,
+              }} />
+            </div>
+            {/* Right handle */}
+            <div
+              style={{ ...handleStyle, right: -16 }}
+              onMouseDown={e => startDrag('right', e)}
+            >
+              <div style={{
+                ...handleBarStyle,
+                background: dragging === 'right' ? 'rgba(94, 109, 214, 0.7)' : handleBarStyle.background,
+              }} />
+            </div>
+          </>
+        )}
+        <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: isConstrained ? 12 : 0, boxShadow: isConstrained ? '0 0 0 1px rgba(94, 109, 214, 0.15), 0 8px 32px rgba(0,0,0,0.12)' : 'none' }}>
+          {children}
+        </div>
+      </div>
+
+      {/* Breakpoint bar — fixed to bottom (designer mode only) */}
+      {visible && !isEngHandoff && createPortal(
+        <div style={{
+          position: 'fixed',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '8px 14px',
+          background: '#1a1f24', borderRadius: 12,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          zIndex: 2147483646,
+        }}>
+          {BREAKPOINTS.map(bp => (
+            <button
+              key={bp.label}
+              onClick={() => setViewportWidth(bp.width)}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                background: (bp.width === viewportWidth || (bp.width === 0 && !isConstrained))
+                  ? 'rgba(94, 109, 214, 0.25)' : 'transparent',
+                color: (bp.width === viewportWidth || (bp.width === 0 && !isConstrained))
+                  ? '#8b9aff' : 'rgba(255,255,255,0.45)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {bp.icon} {bp.label}{bp.width > 0 ? ` (${bp.width})` : ''}
+            </button>
+          ))}
+          <div style={{
+            marginLeft: 8,
+            padding: '5px 12px',
+            fontSize: 12,
+            fontWeight: 600,
+            color: '#8b9aff',
+            background: 'rgba(94, 109, 214, 0.1)',
+            borderRadius: 8,
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+          }}>
+            {isConstrained ? `${viewportWidth}px` : 'Full width'}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+// ─── Inspect Mode (Dev Mode) ───
+
+const INSPECT_SPECS: Record<string, { title: string; specs: [string, string][] }> = {
+  'page-header': {
+    title: 'Page Header',
+    specs: [
+      ['Font', 'Helvetica Neue'],
+      ['Size / Weight', '32px / 200 (Thin)'],
+      ['Line height', '38px'],
+      ['Letter spacing', '-0.4px'],
+      ['Color', 'rgba(28,43,52,0.98)'],
+      ['DRUIDS token', 'ui-text'],
+      ['Alignment', 'center'],
+      ['Margin bottom', '40px'],
+    ],
+  },
+  'product-header': {
+    title: 'Product Header',
+    specs: [
+      ['Font', 'Helvetica Neue'],
+      ['Size / Weight', '26px / 500 (Medium)'],
+      ['Line height', '36px'],
+      ['Letter spacing', '-0.3px'],
+      ['Color', 'rgba(28,43,52,0.98)'],
+      ['DRUIDS token', 'ui-text'],
+      ['Icon gap', '8px'],
+      ['Count gap', '8px'],
+      ['Count alignment', 'baseline'],
+    ],
+  },
+  'link-count': {
+    title: 'Link Count',
+    specs: [
+      ['Size / Weight', '14px / 500 (Medium)'],
+      ['Color', 'rgba(28,43,52,0.68)'],
+      ['DRUIDS token', 'ui-text-secondary'],
+      ['Variant', 'tabular-nums'],
+      ['Alignment', 'baseline with header'],
+    ],
+  },
+  'subsection-header': {
+    title: 'Subsection Header',
+    specs: [
+      ['Font', 'Helvetica Neue'],
+      ['Size / Weight', '12px / 700 (Bold)'],
+      ['Line height', '20px'],
+      ['Letter spacing', '0.5px'],
+      ['Transform', 'uppercase'],
+      ['Color', 'rgba(28,43,52,0.68)'],
+      ['DRUIDS token', 'ui-text-secondary'],
+      ['Gap to first link', '20px'],
+    ],
+  },
+  'link': {
+    title: 'Link',
+    specs: [
+      ['Font', 'Helvetica Neue'],
+      ['Size / Weight', '16px / 400 (Regular)'],
+      ['Line height', '150% (24px)'],
+      ['Color (default)', '#5e6dd6 (indigo-500)'],
+      ['Color (hover)', '#3F4CA5 (indigo-600)'],
+      ['Link → link gap', '20px'],
+      ['Link → description gap', '2px'],
+      ['—', ''],
+      ['Arrow', '16×16px, inline-flex'],
+      ['Arrow default', 'opacity: 0, translateX: -8px'],
+      ['Arrow hover', 'opacity: 1, translateX: 0'],
+      ['Arrow timing', '200ms ease-out'],
+    ],
+  },
+  'description': {
+    title: 'Description Text',
+    specs: [
+      ['Font', 'Helvetica Neue'],
+      ['Size (inline)', '16px'],
+      ['Size (tooltip)', '14px'],
+      ['Weight', '400 (Regular)'],
+      ['Line height', '150%'],
+      ['Color', 'rgba(28,43,52,0.68)'],
+      ['DRUIDS token', 'ui-text-secondary'],
+      ['—', ''],
+      ['Tooltip bg', '#ffffff'],
+      ['Tooltip radius', '6px'],
+      ['Tooltip shadow', '0 4px 16px rgba(0,0,0,0.12)'],
+      ['Tooltip padding', '8px 12px'],
+      ['Tooltip offset', '4px top, -12px left'],
+      ['Tooltip anim', '200ms ease-out, translateY -8→0'],
+    ],
+  },
+  'card': {
+    title: 'Section Card',
+    specs: [
+      ['Background', 'rgb(255 255 255 / 0.55)'],
+      ['Backdrop blur', '24px'],
+      ['Border', '1px solid rgba(0,0,0,0.068)'],
+      ['Border radius', '8px'],
+      ['Shadow', '0 4px 8px -4px rgba(0,0,0,0.05)'],
+      ['Padding', '32px'],
+      ['Column gap', '92px (28 + 2×32)'],
+      ['Row gap (layers)', '48px'],
+      ['Subsection gap', '40px'],
+      ['—', ''],
+      ['Hover bg', 'linear-gradient(↓)'],
+      ['  Top opacity', '90%'],
+      ['  Bottom opacity', '70%'],
+      ['  Fade starts', '30%'],
+      ['—', ''],
+      ['Scale (hover)', '1.008x, 1.02y'],
+      ['Enter easing', 'cubic-bezier(0.25, 1.4, 0.55, 1)'],
+      ['Enter transform', '800ms'],
+      ['Enter bg/shadow', '300ms'],
+      ['Leave easing', 'cubic-bezier(0.4, 0.06, 0.2, 1)'],
+      ['Leave transform', '450ms'],
+      ['Leave bg/shadow', '300ms'],
+    ],
+  },
+  'page-container': {
+    title: 'Page Layout',
+    specs: [
+      ['Max width', '1336px'],
+      ['Top padding', '200px'],
+      ['Side padding', '48px (desktop), 20px (mobile)'],
+      ['Bottom padding', '120px'],
+      ['Grid gap (H)', '28px'],
+      ['Grid gap (V)', '40px'],
+      ['—', ''],
+      ['Breakpoints', ''],
+      ['  Mobile', '≤ 375px'],
+      ['  Tablet', '≤ 768px'],
+      ['  Desktop', '1336px'],
+      ['Hover disabled', '< 768px'],
+    ],
+  },
+  'section-icon': {
+    title: 'Section Icon',
+    specs: [
+      ['Size', '28×28px'],
+      ['Color', 'matches section theme'],
+      ['Position', 'inline with product header'],
+      ['Gap to title', '8px'],
+    ],
+  },
+};
+
+function InspectOverlay({ designVars, embedded = false, onSelect }: { designVars: DesignVars; embedded?: boolean; onSelect?: (spec: { title: string; specs: [string, string][] } | null, box: { top: number; left: number; width: number; height: number } | null) => void }) {
+  const [selected, setSelected] = React.useState<string | null>(null);
+  const [hoveredEl, setHoveredEl] = React.useState<HTMLElement | null>(null);
+  const [selectedEl, setSelectedEl] = React.useState<HTMLElement | null>(null);
+  const [highlight, setHighlight] = React.useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const [selectionBox, setSelectionBox] = React.useState<{ top: number; left: number; width: number; height: number } | null>(null);
+
+  React.useEffect(() => {
+    document.body.style.cursor = 'crosshair';
+    return () => { document.body.style.cursor = ''; };
+  }, []);
+
+  React.useEffect(() => {
+    if (onSelect) {
+      const spec = selected ? INSPECT_SPECS[selected] || null : null;
+      onSelect(spec, selectionBox);
+    }
+  }, [selected, selectionBox, onSelect]);
+
+  const updateHighlight = React.useCallback((el: HTMLElement | null, setter: (v: any) => void) => {
+    if (!el) { setter(null); return; }
+    const r = el.getBoundingClientRect();
+    setter({ top: r.top, left: r.left, width: r.width, height: r.height });
+  }, []);
+
+  React.useEffect(() => {
+    const findInspectable = (target: HTMLElement): HTMLElement | null => {
+      let el: HTMLElement | null = target;
+      while (el) {
+        if (el.dataset.inspect) return el;
+        el = el.parentElement;
+      }
+      return null;
+    };
+
+    const onMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-inspect-panel]') || target.closest('[data-toolbar]') || target.closest('[data-mode-bar]')) {
+        setHoveredEl(null);
+        setHighlight(null);
+        return;
+      }
+      const el = findInspectable(target);
+      setHoveredEl(el);
+      updateHighlight(el, setHighlight);
+    };
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-inspect-panel]') || target.closest('[data-toolbar]') || target.closest('[data-mode-bar]')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const el = findInspectable(target);
+      if (el) {
+        setSelected(el.dataset.inspect!);
+        setSelectedEl(el);
+        updateHighlight(el, setSelectionBox);
+      }
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setSelected(null); setSelectedEl(null); setSelectionBox(null); }
+    };
+
+    document.addEventListener('mousemove', onMove, true);
+    document.addEventListener('click', onClick, true);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousemove', onMove, true);
+      document.removeEventListener('click', onClick, true);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [updateHighlight]);
+
+  React.useEffect(() => {
+    if (!selectedEl) return;
+    const update = () => updateHighlight(selectedEl, setSelectionBox);
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('scroll', update, true); window.removeEventListener('resize', update); };
+  }, [selectedEl, updateHighlight]);
+
+  const spec = selected ? INSPECT_SPECS[selected] : null;
+  const labelS: React.CSSProperties = { fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' };
+  const valueS: React.CSSProperties = { fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace', textAlign: 'right' };
+  const headS: React.CSSProperties = { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 2 };
+
+  return createPortal(
+    <>
+      {/* Hover highlight */}
+      {highlight && hoveredEl !== selectedEl && (
+        <div style={{
+          position: 'fixed', pointerEvents: 'none', zIndex: 99998,
+          top: highlight.top, left: highlight.left, width: highlight.width, height: highlight.height,
+          outline: '2px solid rgba(94,109,214,0.6)',
+          background: 'rgba(94,109,214,0.06)',
+          borderRadius: 4,
+          transition: 'all 80ms ease-out',
+        }} />
+      )}
+      {/* Selection highlight */}
+      {selectionBox && (
+        <div style={{
+          position: 'fixed', pointerEvents: 'none', zIndex: 99998,
+          top: selectionBox.top, left: selectionBox.left, width: selectionBox.width, height: selectionBox.height,
+          outline: '2px solid #5e6dd6',
+          background: 'rgba(94,109,214,0.08)',
+          borderRadius: 4,
+        }}>
+          {/* Size label */}
+          <div style={{
+            position: 'absolute', bottom: -20, left: 0,
+            background: '#5e6dd6', color: '#fff', fontSize: 10, fontWeight: 600,
+            padding: '2px 6px', borderRadius: 3, whiteSpace: 'nowrap',
+            fontFamily: 'SF Mono, Menlo, monospace',
+          }}>
+            {Math.round(selectionBox.width)} × {Math.round(selectionBox.height)}
+          </div>
+        </div>
+      )}
+      {/* Spec panel (standalone mode only — in embedded mode, specs go to the parent panel) */}
+      {!embedded && (
+        <div data-inspect-panel style={{
+          position: 'fixed', top: 16, right: 16, width: 300,
+          maxHeight: 'calc(100vh - 32px)',
+          background: 'rgba(20, 20, 28, 0.95)',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.4)', zIndex: 99999,
+          overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+        }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#5e6dd6' }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Inspect</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>Click any element</span>
+            </div>
+          </div>
+          <div style={{ padding: '12px 16px 16px', overflowY: 'auto', flex: 1 }}>
+            {!spec ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '32px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 32, opacity: 0.3 }}>⊹</div>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+                  Hover over elements to highlight them.<br />Click to see specs.
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={headS}>{spec.title}</div>
+                {spec.specs.map(([label, value], i) => {
+                  if (label === '—') return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />;
+                  if (!value) return <div key={i} style={headS}>{label}</div>;
+                  return (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                      <span style={labelS}>{label}</span>
+                      <span style={valueS}>{value}</span>
+                    </div>
+                  );
+                })}
+                {selectionBox && (
+                  <>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />
+                    <div style={headS}>Computed</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                      <span style={labelS}>Size</span>
+                      <span style={valueS}>{Math.round(selectionBox.width)} × {Math.round(selectionBox.height)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                      <span style={labelS}>Position</span>
+                      <span style={valueS}>{Math.round(selectionBox.left)}, {Math.round(selectionBox.top + window.scrollY)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>,
+    document.body
+  );
+}
+
 export default function App() {
   const [toolbarOpen, setToolbarOpen] = React.useState(true);
+  const [showTools, setShowTools] = React.useState(true);
+  const [showRedline, setShowRedline] = React.useState(false);
+  const [descLength, setDescLength] = React.useState<DescLength>(isEngHandoff ? 'full' : initialDescLength);
+  const [disclosure, setDisclosure] = React.useState<DisclosureMode>(isEngHandoff ? 'hover-link' : initialDisclosure);
+
+  // Eng handoff: Design vs Dev mode
+  type ViewMode = 'design' | 'dev';
+  const [viewMode, setViewMode] = React.useState<ViewMode>('design');
+  const [showPanel, setShowPanel] = React.useState(true);
+  const [inspectedSpec, setInspectedSpec] = React.useState<{ spec: { title: string; specs: [string, string][] } | null; box: { top: number; left: number; width: number; height: number } | null }>({ spec: null, box: null });
+  const handleInspectSelect = React.useCallback((spec: { title: string; specs: [string, string][] } | null, box: { top: number; left: number; width: number; height: number } | null) => {
+    setInspectedSpec({ spec, box });
+  }, []);
+
+  // Cmd+Shift+Period to toggle panel/tools
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '.') {
+        e.preventDefault();
+        if (isEngHandoff) {
+          setShowPanel(prev => !prev);
+        } else {
+          setShowTools(prev => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // Design variables
-  const [designVars, setDesignVars] = React.useState<DesignVars>(DEFAULT_DESIGN);
+  const [designVars, setDesignVars] = React.useState<DesignVars>(INITIAL_DESIGN);
   const [blobs, setBlobs] = React.useState<GradientBlob[]>(DEFAULT_BLOBS);
   const cssVars = React.useMemo(() => computeCssVars(designVars), [designVars]);
   const baseColor = React.useMemo(() => computeBaseColor(designVars.bgBrightness), [designVars.bgBrightness]);
@@ -935,6 +1935,40 @@ export default function App() {
   const setExtraSubsFor = (key: string, value: number) =>
     setExtraSubs(prev => ({ ...prev, [key]: value }));
 
+  // Height-threshold for row splitting (tunable via toolbar)
+  const [heightThreshold, setHeightThreshold] = React.useState(2.0);
+
+  // Responsive viewport width (0 = full/unconstrained)
+  const [viewportWidth, setViewportWidth] = React.useState(0);
+
+  // Measure actual container width from the DOM so the layout responds to
+  // real browser resizing / DevTools device emulation, not just our custom resizer.
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = React.useState(1336);
+  React.useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setMeasuredWidth(entry.contentBoxSize[0].inlineSize);
+      }
+    });
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const containerWidth = viewportWidth > 0 ? viewportWidth : Math.min(measuredWidth, 1336);
+  const totalCols = containerWidth <= 768 ? 3 : 4;
+  const hoverEnabled = containerWidth > 768;
+
+  const gridRows = React.useMemo(
+    () => computeLayout(extraSubs, extraLinksPerSub, heightThreshold, totalCols, containerWidth),
+    [extraSubs, extraLinksPerSub, heightThreshold, totalCols, containerWidth]
+  );
+
+  // When all sections are on own rows, use consistent column count for alignment
+  const maxContentCols = Math.max(...SECTIONS.map(s => s.baseGroups.length));
+  const allRowsSolo = gridRows.every(r => r.headers.length === 1);
+
   // When embedded in an iframe, receive toolbar state from the parent page
   React.useEffect(() => {
     if (!isEmbedded) return;
@@ -943,6 +1977,7 @@ export default function App() {
       const s = e.data;
       if (s.extraLinksPerSub !== undefined) setExtraLinksPerSub(s.extraLinksPerSub);
       if (s.extraSubs !== undefined) setExtraSubs(s.extraSubs);
+      if (s.heightThreshold !== undefined) setHeightThreshold(s.heightThreshold);
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
@@ -951,9 +1986,12 @@ export default function App() {
 
 
 
+  const engStepperStyle: React.CSSProperties = { width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', borderRadius: 3, fontSize: 14 };
+
   return (
     <>
-      {!isEmbedded && createPortal(
+      {/* ─── DESIGNER MODE (local dev) ─── */}
+      {!isEngHandoff && !isEmbedded && showTools && createPortal(
         <div
           data-toolbar="true"
           style={{
@@ -966,63 +2004,61 @@ export default function App() {
           }}
         >
           <div style={{ background: '#242f36', color: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-            {/* Header — always visible, click to toggle */}
             <div
               onClick={() => setToolbarOpen(!toolbarOpen)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 16px',
-                height: 36,
-                cursor: 'pointer',
-                userSelect: 'none',
-              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 36, cursor: 'pointer', userSelect: 'none' }}
             >
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>
-                Variables
-              </span>
-              <span style={{
-                color: 'rgba(255,255,255,0.35)',
-                fontSize: 18,
-                lineHeight: 1,
-                transform: toolbarOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 200ms',
-              }}>
-                ›
-              </span>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>Variables</span>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 18, lineHeight: 1, transform: toolbarOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 200ms' }}>›</span>
             </div>
-
-            {/* Expandable body */}
-            <div style={{
-              maxHeight: toolbarOpen ? 300 : 0,
-              overflow: 'hidden',
-              transition: 'max-height 250ms cubic-bezier(0.25, 0.1, 0.25, 1)',
-            }}>
+            <div style={{ maxHeight: toolbarOpen ? 300 : 0, overflow: 'hidden', transition: 'max-height 250ms cubic-bezier(0.25, 0.1, 0.25, 1)' }}>
               <div style={{ padding: '0 16px 12px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {/* Row 1 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                  {/* Links per sub */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Links per subsection</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '2px 4px' }}>
-                      <button onClick={() => setExtraLinksPerSub(v => Math.max(1, v - 1))} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', borderRadius: 3, fontSize: 14 }}>−</button>
+                      <button onClick={() => setExtraLinksPerSub(v => Math.max(1, v - 1))} style={engStepperStyle}>−</button>
                       <span style={{ width: 16, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: 'rgba(255,255,255,0.9)' }}>{extraLinksPerSub}</span>
-                      <button onClick={() => setExtraLinksPerSub(v => Math.min(20, v + 1))} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', borderRadius: 3, fontSize: 14 }}>+</button>
+                      <button onClick={() => setExtraLinksPerSub(v => Math.min(20, v + 1))} style={engStepperStyle}>+</button>
                     </div>
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Disclosure</span>
+                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: 1, gap: 1 }}>
+                      {([['off', 'OFF'], ['hover-link', 'LINK'], ['hover-section', 'SECTION'], ['always', 'ALWAYS']] as [DisclosureMode, string][]).map(([mode, label]) => (
+                        <button key={mode} onClick={() => setDisclosure(mode)} style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, border: 'none', borderRadius: 3, cursor: 'pointer', background: disclosure === mode ? 'rgba(94, 109, 214, 0.25)' : 'transparent', color: disclosure === mode ? '#8b9aff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s' }}>{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, opacity: disclosure === 'off' ? 0.3 : 1, pointerEvents: disclosure === 'off' ? 'none' : 'auto' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Length</span>
+                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: 1, gap: 1 }}>
+                      {(['short', 'full'] as DescLength[]).map(len => (
+                        <button key={len} onClick={() => setDescLength(len)} style={{ padding: '3px 8px', fontSize: 10, fontWeight: 600, border: 'none', borderRadius: 3, cursor: 'pointer', textTransform: 'uppercase', background: descLength === len ? 'rgba(94, 109, 214, 0.25)' : 'transparent', color: descLength === len ? '#8b9aff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s' }}>{len}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Height threshold</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '2px 4px' }}>
+                      <button onClick={() => setHeightThreshold(v => Math.max(1.2, Math.round((v - 0.1) * 10) / 10))} style={engStepperStyle}>−</button>
+                      <span style={{ width: 24, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: 'rgba(255,255,255,0.9)' }}>{heightThreshold.toFixed(1)}</span>
+                      <button onClick={() => setHeightThreshold(v => Math.min(5.0, Math.round((v + 0.1) * 10) / 10))} style={engStepperStyle}>+</button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <button onClick={() => setShowRedline(v => !v)} style={{ padding: '3px 10px', fontSize: 10, fontWeight: 600, border: 'none', borderRadius: 3, cursor: 'pointer', background: showRedline ? 'rgba(94,109,214,0.25)' : 'rgba(255,255,255,0.08)', color: showRedline ? '#7b8cff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{showRedline ? '● Inspect' : 'Inspect'}</button>
+                  </div>
                 </div>
-
-                {/* Row 2 — per-section scalers */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 10 }}>
                   <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>Extra subsections</span>
                   {ALL_SECTION_KEYS.map((key) => (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{SECTION_LABELS[key]}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '2px 4px' }}>
-                        <button onClick={() => setExtraSubsFor(key, Math.max(0, (extraSubs[key] || 0) - 1))} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', borderRadius: 3, fontSize: 14 }}>−</button>
+                        <button onClick={() => setExtraSubsFor(key, Math.max(0, (extraSubs[key] || 0) - 1))} style={engStepperStyle}>−</button>
                         <span style={{ width: 14, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: 'rgba(255,255,255,0.9)' }}>{extraSubs[key] || 0}</span>
-                        <button onClick={() => setExtraSubsFor(key, Math.min(15, (extraSubs[key] || 0) + 1))} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', borderRadius: 3, fontSize: 14 }}>+</button>
+                        <button onClick={() => setExtraSubsFor(key, Math.min(15, (extraSubs[key] || 0) + 1))} style={engStepperStyle}>+</button>
                       </div>
                     </div>
                   ))}
@@ -1034,16 +2070,170 @@ export default function App() {
         document.body
       )}
 
-      {!isEmbedded && (
+      {!isEngHandoff && !isEmbedded && showTools && (
         <DesignToolbar
           vars={designVars}
           onChange={setDesignVars}
-          onReset={() => setDesignVars(DEFAULT_DESIGN)}
+          onReset={() => setDesignVars(INITIAL_DESIGN)}
           blobs={blobs}
           onBlobsChange={setBlobs}
         />
       )}
 
+      {/* ─── ENG HANDOFF MODE ─── */}
+      {isEngHandoff && createPortal(
+        <>
+          {/* Top breakpoint bar */}
+          {showPanel && (
+            <div data-toolbar="true" style={{
+              position: 'fixed', top: 0, left: 0, right: showPanel ? 320 : 0, zIndex: 99990,
+              display: 'flex', justifyContent: 'center', padding: '8px 16px',
+              fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            }}>
+              <div style={{ display: 'flex', gap: 2, background: 'rgba(20,20,28,0.85)', backdropFilter: 'blur(12px)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.08)' }}>
+                {BREAKPOINTS.map(bp => {
+                  const isActive = bp.width === 0 ? viewportWidth === 0 : viewportWidth === bp.width;
+                  return (
+                    <button key={bp.label} onClick={() => setViewportWidth(bp.width)} style={{
+                      padding: '4px 12px', fontSize: 11, fontWeight: 500, border: 'none', borderRadius: 5, cursor: 'pointer',
+                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      color: isActive ? '#fff' : 'rgba(255,255,255,0.4)',
+                      transition: 'all 0.15s',
+                    }}>
+                      {bp.icon} {bp.label} {bp.width > 0 ? `(${bp.width})` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Right panel */}
+          {showPanel && (
+            <div data-inspect-panel style={{
+              position: 'fixed', top: 0, right: 0, bottom: 0, width: 320, zIndex: 99990,
+              background: 'rgba(20, 20, 28, 0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', flexDirection: 'column',
+              fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            }}>
+              {/* Panel header with mode context */}
+              <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                    {viewMode === 'design' ? 'Controls' : 'Inspect'}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>⌘⇧. to hide</span>
+                </div>
+              </div>
+
+              {/* Panel content */}
+              <div style={{ padding: 16, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {viewMode === 'design' ? (
+                  <>
+                    {/* Links per subsection */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Links per subsection</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '4px 8px', width: 'fit-content' }}>
+                        <button onClick={() => setExtraLinksPerSub(v => Math.max(1, v - 1))} style={engStepperStyle}>−</button>
+                        <span style={{ width: 24, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 13 }}>{extraLinksPerSub}</span>
+                        <button onClick={() => setExtraLinksPerSub(v => Math.min(20, v + 1))} style={engStepperStyle}>+</button>
+                      </div>
+                    </div>
+                    {/* Height threshold */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Height threshold</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '4px 8px', width: 'fit-content' }}>
+                        <button onClick={() => setHeightThreshold(v => Math.max(1.2, Math.round((v - 0.1) * 10) / 10))} style={engStepperStyle}>−</button>
+                        <span style={{ width: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 13 }}>{heightThreshold.toFixed(1)}</span>
+                        <button onClick={() => setHeightThreshold(v => Math.min(5.0, Math.round((v + 0.1) * 10) / 10))} style={engStepperStyle}>+</button>
+                      </div>
+                    </div>
+                    {/* Extra subsections */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Extra subsections</span>
+                      {ALL_SECTION_KEYS.map((key) => (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{SECTION_LABELS[key]}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '2px 6px' }}>
+                            <button onClick={() => setExtraSubsFor(key, Math.max(0, (extraSubs[key] || 0) - 1))} style={engStepperStyle}>−</button>
+                            <span style={{ width: 14, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 12 }}>{extraSubs[key] || 0}</span>
+                            <button onClick={() => setExtraSubsFor(key, Math.min(15, (extraSubs[key] || 0) + 1))} style={engStepperStyle}>+</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  inspectedSpec.spec ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>{inspectedSpec.spec.title}</div>
+                      {inspectedSpec.spec.specs.map(([label, value], i) => {
+                        if (label === '—') return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />;
+                        if (!value) return <div key={i} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{label}</div>;
+                        return (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{label}</span>
+                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace', textAlign: 'right' }}>{value}</span>
+                          </div>
+                        );
+                      })}
+                      {inspectedSpec.box && (
+                        <>
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />
+                          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Computed</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Size</span>
+                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.width)} × {Math.round(inspectedSpec.box.height)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Position</span>
+                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.left)}, {Math.round(inspectedSpec.box.top + window.scrollY)}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '32px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 32, opacity: 0.3 }}>⊹</div>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+                        Hover over elements to highlight.<br />Click to see specs.
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom mode bar (like Figma) */}
+          <div data-mode-bar style={{
+            position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 99991,
+            display: 'flex', gap: 2, background: 'rgba(20,20,28,0.9)', backdropFilter: 'blur(16px)',
+            borderRadius: 10, padding: 4, border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          }}>
+            {(['design', 'dev'] as ViewMode[]).map(mode => (
+              <button key={mode} onClick={() => { setViewMode(mode); setShowRedline(mode === 'dev'); }} style={{
+                padding: '8px 24px', fontSize: 13, fontWeight: 600, border: 'none', borderRadius: 7, cursor: 'pointer',
+                background: viewMode === mode ? (mode === 'dev' ? 'rgba(94,109,214,0.2)' : 'rgba(255,255,255,0.1)') : 'transparent',
+                color: viewMode === mode ? (mode === 'dev' ? '#8b9aff' : '#fff') : 'rgba(255,255,255,0.35)',
+                transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                {mode === 'design' ? (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/></svg>Design</>
+                ) : (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Dev</>
+                )}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+
+      <ResponsiveResizer viewportWidth={viewportWidth} setViewportWidth={setViewportWidth} visible={showTools}>
       <div
         className="w-full relative overflow-hidden"
         style={{
@@ -1075,52 +2265,179 @@ export default function App() {
                   width: `${b.width * s}%`,
                   height: `${b.height * s}%`,
                   borderRadius: '50%',
-                  background: `radial-gradient(ellipse at center, ${b.color} 0%, transparent 70%)`,
+                  background: (conceptParam === '2' || conceptParam === '4')
+                    ? `radial-gradient(ellipse at center, ${b.color} 0%, ${b.color}66 25%, ${b.color}22 55%, transparent 80%)`
+                    : `radial-gradient(ellipse at center, ${b.color} 0%, transparent 70%)`,
                   opacity: (b.opacity / 100) * (designVars.blobOpacity / 100),
                 }}
               />
             );
           })}
         </div>
-        <div className="mx-auto p-6 md:p-12 relative" style={{ maxWidth: 1336 }}>
+        <div ref={contentRef} data-inspect="page-container" className="mx-auto relative" style={{ maxWidth: 1336, padding: `200px ${containerWidth <= 480 ? 20 : 48}px 120px` }}>
+          {showHeader && (
+            <h1 data-inspect="page-header" style={{
+              fontFamily: headerFont,
+              fontSize: 32,
+              fontWeight: 200,
+              lineHeight: '38px',
+              letterSpacing: '-0.4px',
+              color: 'rgba(28,43,52,0.98)',
+              marginBottom: 40,
+              textAlign: 'center',
+            }}>
+              Browse by product
+            </h1>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: designVars.gridGapV }}>
-            {GRID_ROWS.map((row, rowIndex) => {
+            {gridRows.map((row, rowIndex) => {
               let colOffset = 0;
+              const sectionData = row.headers.map((header) => {
+                const startCol = colOffset;
+                colOffset += header.cols;
+                let headerColumns = row.columns.slice(startCol, startCol + header.cols);
+                const allSubs = headerColumns.flat(2);
+                const linkCount = allSubs.reduce((s, sub) => s + sub.links.length, 0);
+
+                // Single-subsection solo sections: flag for horizontal link rendering
+                const isSoloRow = row.headers.length === 1;
+                const spreadLinks = isSoloRow && allSubs.length === 1 && allSubs[0].links.length > 1;
+
+                const contentCols = spreadLinks
+                  ? Math.min(allSubs[0].links.length, header.cols)
+                  : headerColumns.filter(col => col.some(layer => layer.length > 0)).length;
+                const layerCount = Math.max(...headerColumns.map(c => c.length));
+                return { header, headerColumns, linkCount, layerCount, startCol, contentCols, spreadLinks };
+              });
+
               return (
                 <div
                   key={rowIndex}
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', columnGap: designVars.gridGapH, rowGap: designVars.gridGapV }}
+                  style={{ display: 'grid', gridTemplateColumns: `repeat(${totalCols}, 1fr)`, gridTemplateRows: 'auto auto', columnGap: designVars.gridGapH, alignItems: 'start' }}
                 >
-                  {row.headers.map((header) => {
-                    const startCol = colOffset;
-                    colOffset += header.cols;
-                    const headerColumns = row.columns.slice(startCol, startCol + header.cols);
-                    const linkCount = headerColumns.flat().reduce((s, sub) => s + sub.links.length, 0);
+                  {/* Row 1: all section headers */}
+                  {sectionData.map(({ header, linkCount }) => (
+                    <div key={`h-${header.title}`} data-inspect="product-header" className="flex items-center gap-3" style={{ gridColumn: `span ${header.cols}`, gridRow: 1, paddingBottom: 20, alignSelf: 'end' }}>
+                      <span data-inspect="section-icon">{SECTION_ICONS[header.title]}</span>
+                      <h2 className="leading-[36px] text-[26px] text-[rgba(28,43,52,0.98)] tracking-[-0.3px] flex items-baseline gap-2" style={{ fontFamily: headerFont, fontWeight: 500 }}>
+                        {header.title}
+                        <span data-inspect="link-count" className="text-[14px] text-[rgba(28,43,52,0.68)] tabular-nums" style={{ fontFamily: countFont, fontWeight: 500 }}>
+                          ({linkCount})
+                        </span>
+                      </h2>
+                    </div>
+                  ))}
 
-                    return (
-                      <div key={header.title} style={{ gridColumn: `span ${header.cols}`, display: 'flex', flexDirection: 'column' }}>
-                        {/* Section header */}
-                        <div className="flex items-center gap-3" style={{ marginBottom: 20 }}>
-                          {SECTION_ICONS[header.title]}
-                          <h2 className="font-['Noto_Sans_SemiBold:Regular',sans-serif] leading-[36px] text-[26px] text-[rgba(28,43,52,0.98)] tracking-[-0.3px]">
-                            {header.title}
-                          </h2>
-                          <span className="font-['Noto_Sans:Regular',sans-serif] text-[14px] text-[rgba(28,43,52,0.38)] tabular-nums" style={{ marginLeft: -4 }}>
-                            ({linkCount})
-                          </span>
-                        </div>
+                  {/* Row 2: all section cards (each hugs its own content) */}
+                  {sectionData.map(({ header, headerColumns, layerCount, contentCols, spreadLinks }) => {
+                    const filledColumns = headerColumns.filter(col => col.some(layer => layer.length > 0));
+                    const allSubs = headerColumns.flat(2).filter(s => s.links?.length > 0);
+                    const layout = row.subsectionLayout;
+                    const linkColCount = layout === 'vertical-1col' ? 1 : layout === 'vertical-2col' ? 2 : 0;
 
-                        {/* Card panel */}
-                        <HoverCard cols={header.cols} gridGapH={designVars.gridGapH}>
-                          {headerColumns.map((colSubheaders, colIndex) => (
-                            <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-                              {colSubheaders.map((subheader, subIdx) => (
-                                <SubheaderColumn key={subheader.title + subIdx} subheader={subheader} />
+                    const isSharedRow = row.headers.length > 1;
+
+                    // Vertical layout: distribute subsections across N columns
+                    if (linkColCount > 0) {
+                      // Build columns by distributing subsections round-robin
+                      const cols: typeof allSubs[] = Array.from({ length: linkColCount }, () => []);
+                      allSubs.forEach((sub, i) => cols[i % linkColCount].push(sub));
+
+                      return (
+                        <SectionCardWrapper key={`c-${header.title}`} disclosure={disclosure} style={{ gridColumn: `span ${header.cols}`, gridRow: 2, alignSelf: isSharedRow ? 'stretch' : 'start' }}>
+                          {(secHovered) => (
+                            <HoverCard cols={linkColCount} gridGapH={designVars.gridGapH} hoverEnabled={hoverEnabled} onSectionHover={disclosure === 'hover-section' ? secHovered.set : undefined}>
+                              {cols.map((colSubs, ci) => (
+                                <div key={ci} style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
+                                  {colSubs.map((sub, si) => (
+                                    <SubheaderColumn key={si} subheader={sub} noHover={!hoverEnabled} descLength={descLength} disclosure={disclosure} sectionHovered={secHovered.value} />
+                                  ))}
+                                </div>
                               ))}
-                            </div>
-                          ))}
-                        </HoverCard>
-                      </div>
+                            </HoverCard>
+                          )}
+                        </SectionCardWrapper>
+                      );
+                    }
+
+                    const cardPadding = 32;
+                    const internalGap = designVars.gridGapH + 2 * cardPadding;
+                    const isSoloRow = row.headers.length === 1;
+
+                    // Spread links horizontally for single-subsection solo sections (AI)
+                    if (spreadLinks) {
+                      const sub = allSubs[0];
+                      const linkCols = Math.min(sub.links.length, contentCols);
+                      return (
+                        <SectionCardWrapper key={`c-${header.title}`} disclosure={disclosure} style={{ gridColumn: `span ${header.cols}`, gridRow: 2, alignSelf: isSharedRow ? 'stretch' : 'start' }}>
+                          {(secHovered) => (
+                            <HoverCard cols={isSoloRow ? linkCols : 1} gridGapH={designVars.gridGapH} hoverEnabled={hoverEnabled} onSectionHover={disclosure === 'hover-section' ? secHovered.set : undefined}>
+                              {isSoloRow ? (
+                                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                  {sub.title && (
+                                    <h3
+                                      className="leading-[20px] text-[12px] text-[rgba(28,43,52,0.68)] tracking-[0.5px] uppercase"
+                                      style={{ fontFamily: subheaderFont, fontWeight: isHelvetica ? 700 : undefined }}
+                                    >
+                                      {sub.title}
+                                    </h3>
+                                  )}
+                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${linkCols}, 1fr)`, columnGap: internalGap }}>
+                                    {sub.links.map((link, i) => (
+                                      <LinkItem key={i} link={link} noHover={!hoverEnabled} descLength={descLength} disclosure={disclosure} sectionHovered={secHovered.value} />
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-5">
+                                  {sub.title && (
+                                    <h3
+                                      className="leading-[20px] text-[12px] text-[rgba(28,43,52,0.68)] tracking-[0.5px] uppercase"
+                                      style={{ fontFamily: subheaderFont, fontWeight: isHelvetica ? 700 : undefined }}
+                                    >
+                                      {sub.title}
+                                    </h3>
+                                  )}
+                                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${linkCols}, 1fr)`, columnGap: internalGap, rowGap: 20 }}>
+                                    {sub.links.map((link, i) => (
+                                      <LinkItem key={i} link={link} noHover={!hoverEnabled} descLength={descLength} disclosure={disclosure} sectionHovered={secHovered.value} />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </HoverCard>
+                          )}
+                        </SectionCardWrapper>
+                      );
+                    }
+
+                    // Default: horizontal subsection layout
+                    // Solo sections: use maxContentCols so columns align vertically across sections
+                    const effectiveCols = isSoloRow ? maxContentCols : contentCols;
+                    return (
+                      <SectionCardWrapper key={`c-${header.title}`} disclosure={disclosure} style={{ gridColumn: `span ${header.cols}`, gridRow: 2, alignSelf: isSharedRow ? 'stretch' : 'start' }}>
+                        {(secHovered) => (
+                          <HoverCard cols={effectiveCols} gridGapH={designVars.gridGapH} hoverEnabled={hoverEnabled} onSectionHover={disclosure === 'hover-section' ? secHovered.set : undefined}>
+                            {Array.from({ length: layerCount }, (_, layerIdx) =>
+                              filledColumns.map((colLayers, colIndex) => {
+                                const subs = colLayers[layerIdx] || [];
+                                return (
+                                  <div key={`${colIndex}-${layerIdx}`} style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 40,
+                                    gridColumn: colIndex + 1,
+                                  }}>
+                                    {subs.map((subheader, subIdx) => (
+                                      <SubheaderColumn key={subheader.title + subIdx} subheader={subheader} noHover={!hoverEnabled} descLength={descLength} disclosure={disclosure} sectionHovered={secHovered.value} />
+                                    ))}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </HoverCard>
+                        )}
+                      </SectionCardWrapper>
                     );
                   })}
                 </div>
@@ -1129,6 +2446,9 @@ export default function App() {
           </div>
         </div>
       </div>
+      </ResponsiveResizer>
+
+      {showRedline && <InspectOverlay designVars={designVars} embedded={isEngHandoff} onSelect={isEngHandoff ? handleInspectSelect : undefined} />}
     </>
   );
 }
