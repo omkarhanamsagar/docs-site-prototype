@@ -278,7 +278,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   'Security': <SecurityIcon />,
   'Software Delivery': <SoftwareDeliveryIcon />,
   'Service Management': <ServiceManagementIcon />,
-  'Platform & Administration': <PlatformCapabilitiesIcon />,
+  'Platform': <PlatformCapabilitiesIcon />,
 };
 
 // ─── Design variables ───
@@ -424,8 +424,8 @@ const descLengthParam = new URLSearchParams(window.location.search).get('desclen
 const initialDescLength: DescLength = descLengthParam === 'full' ? 'full' : 'short';
 const disclosureParam = new URLSearchParams(window.location.search).get('disclosure');
 const initialDisclosure: DisclosureMode = disclosureParam === 'hover-link' ? 'hover-link' : disclosureParam === 'hover-section' ? 'hover-section' : disclosureParam === 'always' ? 'always' : 'off';
-const DEFAULT_BLOBS = conceptParam === '3' ? CONCEPT_3_BLOBS : (conceptParam === '2' || conceptParam === '4') ? CONCEPT_2_BLOBS : CONCEPT_1_BLOBS;
-const INITIAL_DESIGN = conceptParam === '2' || conceptParam === '3' || conceptParam === '4' ? CONCEPT_2_DESIGN : DEFAULT_DESIGN;
+const DEFAULT_BLOBS = isEngHandoff || conceptParam === '2' || conceptParam === '4' ? CONCEPT_2_BLOBS : conceptParam === '3' ? CONCEPT_3_BLOBS : CONCEPT_1_BLOBS;
+const INITIAL_DESIGN = isEngHandoff || conceptParam === '2' || conceptParam === '3' || conceptParam === '4' ? CONCEPT_2_DESIGN : DEFAULT_DESIGN;
 
 const FONT_NOTO = "'Noto_Sans_SemiBold:Regular',sans-serif";
 const FONT_NOTO_BOLD = "'Noto_Sans:Bold',sans-serif";
@@ -994,7 +994,7 @@ const secondarySections = [
     ],
   },
   {
-    title: "Platform & Administration",
+    title: "Platform",
     description: "Extend, customize, and manage Datadog across your organization",
     descriptionHighlight: "Extend, customize, and manage",
     subheaders: [
@@ -1108,7 +1108,7 @@ const SECTIONS: SectionMeta[] = [
     seedOffset: 35,
   },
   {
-    key: 'Platform & Administration', title: 'Platform & Administration', baseCols: 3, maxCols: 4,
+    key: 'Platform', title: 'Platform', baseCols: 3, maxCols: 4,
     baseGroups: [
       secondarySections[4].subheaders.filter(s => s.title === 'CORE PLATFORM'),
       secondarySections[4].subheaders.filter(s => s.title === 'EXTEND'),
@@ -1388,7 +1388,7 @@ const SECTION_LABELS: Record<string, string> = {
   obs: 'Observability',
   dx: 'Digital Exp',
   ...Object.fromEntries(secondarySections.map(s => [s.title, s.title])),
-  'Platform & Administration': 'Platform',
+  'Platform': 'Platform',
 };
 
 const isEmbedded = window.parent !== window;
@@ -1562,143 +1562,233 @@ function ResponsiveResizer({ children, viewportWidth, setViewportWidth, visible 
 // ─── Inspect Mode (Dev Mode) ───
 
 const INSPECT_SPECS: Record<string, { title: string; specs: [string, string][] }> = {
-  'page-header': {
-    title: 'Page Header',
+  'page-container': {
+    title: 'Page Layout & Background',
     specs: [
-      ['Font', 'Helvetica Neue'],
-      ['Size / Weight', '32px / 200 (Thin)'],
+      ['Max width', '1336px'],
+      ['Centering', 'margin: 0 auto'],
+      ['Top padding', '200px'],
+      ['Side padding (desktop)', '48px'],
+      ['Side padding (mobile)', '20px (≤480px)'],
+      ['Bottom padding', '120px'],
+      ['—', ''],
+      ['Background', ''],
+      ['  Base color', 'rgb(254, 253, 255) (#FEFDFF)'],
+      ['  Brightness formula', 'R: b+2, G: b+1, B: b+4 where b=99%'],
+      ['—', ''],
+      ['Gradient blobs', ''],
+      ['  Count', '11 blobs, absolutely positioned'],
+      ['  Shape', 'border-radius: 50% (ellipses)'],
+      ['  Gradient', 'radial-gradient(ellipse at center, color 0%, transparent 70%)'],
+      ['  Colors', '#632CA6, #646DF9, #9B33EF, #8B5CF6, #4F46E5'],
+      ['  Opacity range', '4–8% per blob'],
+      ['  Size range', '~30–60% width, ~20–35% height'],
+      ['  Layer', 'position: absolute, inset: 0, pointer-events: none'],
+      ['  Filter', 'hue-rotate(0deg) saturate(100%)'],
+      ['—', ''],
+      ['Grid system', ''],
+      ['  Columns', '4 (desktop), 3 (≤768px)'],
+      ['  Column gap', '28px'],
+      ['  Row gap', '40px (between section rows)'],
+      ['  Row structure', 'auto auto (header row + card row)'],
+      ['—', ''],
+      ['Breakpoints', ''],
+      ['  Mobile', '≤375px → side pad 20px'],
+      ['  Tablet', '≤768px → 3 cols, hover off'],
+      ['  Desktop', '>768px → 4 cols, hover on'],
+      ['  Full', '1336px max-width'],
+      ['—', ''],
+      ['Layout algorithm', ''],
+      ['  Packing', 'Sequential: sections fill rows L→R'],
+      ['  Height balance', 'heightThreshold: 2.0 ratio'],
+      ['  If too tall', 'Try rebalancing col widths, else split to own row'],
+      ['  Min col width', '140px (breaks row if too narrow)'],
+    ],
+  },
+  'page-header': {
+    title: 'Page Header — "Browse by product"',
+    specs: [
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Font size', '32px'],
+      ['Font weight', '200 (Thin)'],
       ['Line height', '38px'],
       ['Letter spacing', '-0.4px'],
-      ['Color', 'rgba(28,43,52,0.98)'],
-      ['DRUIDS token', 'ui-text'],
-      ['Alignment', 'center'],
-      ['Margin bottom', '40px'],
+      ['Color', 'rgba(28, 43, 52, 0.98)'],
+      ['Text align', 'center'],
+      ['—', ''],
+      ['Spacing', ''],
+      ['  ↑ from viewport top', '200px (container padding-top)'],
+      ['  ↓ to first section row', '40px (margin-bottom)'],
     ],
   },
   'product-header': {
-    title: 'Product Header',
+    title: 'Product Section Header',
     specs: [
-      ['Font', 'Helvetica Neue'],
-      ['Size / Weight', '26px / 500 (Medium)'],
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Font size', '26px'],
+      ['Font weight', '500 (Medium)'],
       ['Line height', '36px'],
       ['Letter spacing', '-0.3px'],
-      ['Color', 'rgba(28,43,52,0.98)'],
-      ['DRUIDS token', 'ui-text'],
-      ['Icon gap', '8px'],
-      ['Count gap', '8px'],
-      ['Count alignment', 'baseline'],
-    ],
-  },
-  'link-count': {
-    title: 'Link Count',
-    specs: [
-      ['Size / Weight', '14px / 500 (Medium)'],
-      ['Color', 'rgba(28,43,52,0.68)'],
-      ['DRUIDS token', 'ui-text-secondary'],
-      ['Variant', 'tabular-nums'],
-      ['Alignment', 'baseline with header'],
-    ],
-  },
-  'subsection-header': {
-    title: 'Subsection Header',
-    specs: [
-      ['Font', 'Helvetica Neue'],
-      ['Size / Weight', '12px / 700 (Bold)'],
-      ['Line height', '20px'],
-      ['Letter spacing', '0.5px'],
-      ['Transform', 'uppercase'],
-      ['Color', 'rgba(28,43,52,0.68)'],
-      ['DRUIDS token', 'ui-text-secondary'],
-      ['Gap to first link', '20px'],
-    ],
-  },
-  'link': {
-    title: 'Link',
-    specs: [
-      ['Font', 'Helvetica Neue'],
-      ['Size / Weight', '16px / 400 (Regular)'],
-      ['Line height', '150% (24px)'],
-      ['Color (default)', '#5e6dd6 (indigo-500)'],
-      ['Color (hover)', '#3F4CA5 (indigo-600)'],
-      ['Link → link gap', '20px'],
-      ['Link → description gap', '2px'],
+      ['Color', 'rgba(28, 43, 52, 0.98)'],
+      ['Layout', 'display: flex, align-items: center, gap: 12px'],
+      ['Count alignment', 'baseline (via flex items-baseline)'],
+      ['Grid row', '1 (separate row above card)'],
       ['—', ''],
-      ['Arrow', '16×16px, inline-flex'],
-      ['Arrow default', 'opacity: 0, translateX: -8px'],
-      ['Arrow hover', 'opacity: 1, translateX: 0'],
-      ['Arrow timing', '200ms ease-out'],
-    ],
-  },
-  'description': {
-    title: 'Description Text',
-    specs: [
-      ['Font', 'Helvetica Neue'],
-      ['Size (inline)', '16px'],
-      ['Size (tooltip)', '14px'],
-      ['Weight', '400 (Regular)'],
-      ['Line height', '150%'],
-      ['Color', 'rgba(28,43,52,0.68)'],
-      ['DRUIDS token', 'ui-text-secondary'],
-      ['—', ''],
-      ['Tooltip bg', '#ffffff'],
-      ['Tooltip radius', '6px'],
-      ['Tooltip shadow', '0 4px 16px rgba(0,0,0,0.12)'],
-      ['Tooltip padding', '8px 12px'],
-      ['Tooltip offset', '4px top, -12px left'],
-      ['Tooltip anim', '200ms ease-out, translateY -8→0'],
-    ],
-  },
-  'card': {
-    title: 'Section Card',
-    specs: [
-      ['Background', 'rgb(255 255 255 / 0.55)'],
-      ['Backdrop blur', '24px'],
-      ['Border', '1px solid rgba(0,0,0,0.068)'],
-      ['Border radius', '8px'],
-      ['Shadow', '0 4px 8px -4px rgba(0,0,0,0.05)'],
-      ['Padding', '32px'],
-      ['Column gap', '92px (28 + 2×32)'],
-      ['Row gap (layers)', '48px'],
-      ['Subsection gap', '40px'],
-      ['—', ''],
-      ['Hover bg', 'linear-gradient(↓)'],
-      ['  Top opacity', '90%'],
-      ['  Bottom opacity', '70%'],
-      ['  Fade starts', '30%'],
-      ['—', ''],
-      ['Scale (hover)', '1.008x, 1.02y'],
-      ['Enter easing', 'cubic-bezier(0.25, 1.4, 0.55, 1)'],
-      ['Enter transform', '800ms'],
-      ['Enter bg/shadow', '300ms'],
-      ['Leave easing', 'cubic-bezier(0.4, 0.06, 0.2, 1)'],
-      ['Leave transform', '450ms'],
-      ['Leave bg/shadow', '300ms'],
-    ],
-  },
-  'page-container': {
-    title: 'Page Layout',
-    specs: [
-      ['Max width', '1336px'],
-      ['Top padding', '200px'],
-      ['Side padding', '48px (desktop), 20px (mobile)'],
-      ['Bottom padding', '120px'],
-      ['Grid gap (H)', '28px'],
-      ['Grid gap (V)', '40px'],
-      ['—', ''],
-      ['Breakpoints', ''],
-      ['  Mobile', '≤ 375px'],
-      ['  Tablet', '≤ 768px'],
-      ['  Desktop', '1336px'],
-      ['Hover disabled', '< 768px'],
+      ['Spacing', ''],
+      ['  Bottom padding', '20px (paddingBottom on header div)'],
+      ['  ↓ to card top', '0px (card starts immediately after)'],
+      ['  Between headers (H)', '28px (grid column gap)'],
     ],
   },
   'section-icon': {
     title: 'Section Icon',
     specs: [
-      ['Size', '28×28px'],
-      ['Color', 'matches section theme'],
-      ['Position', 'inline with product header'],
-      ['Gap to title', '8px'],
+      ['Size', '28 × 28px'],
+      ['Flex', 'shrink: 0'],
+      ['Gap to title', '12px (parent flex gap)'],
+      ['Rendering', 'SVG with linear-gradient fills'],
+      ['—', ''],
+      ['Icon colors by section', ''],
+      ['  Observability', '#9B33EF → #646DF9 (purple→indigo)'],
+      ['  Digital Experience', '#9B33EF → #646DF9'],
+      ['  AI', '#7C3AED → #646DF9 (violet→indigo)'],
+      ['  Security', '#632CA6 → #646DF9'],
+      ['  Software Delivery', '#632CA6 → #646DF9'],
+      ['  Service Management', '#632CA6 → #646DF9'],
+      ['  Platform', '#632CA6 → #646DF9'],
+    ],
+  },
+  'link-count': {
+    title: 'Link Count — "(N)"',
+    specs: [
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Font size', '14px'],
+      ['Font weight', '500 (Medium)'],
+      ['Color', 'rgba(28, 43, 52, 0.68)'],
+      ['Font variant', 'tabular-nums'],
+      ['Alignment', 'baseline with section title (flex items-baseline)'],
+      ['Gap to title', '8px (parent flex gap)'],
+    ],
+  },
+  'card': {
+    title: 'Section Card (Glass)',
+    specs: [
+      ['Background (default)', 'rgb(255 255 255 / 0.55)'],
+      ['Backdrop filter', 'blur(24px)'],
+      ['Border', '1px solid rgba(0, 0, 0, 0.068)'],
+      ['Border radius', '8px'],
+      ['Box shadow', '0 4px 8px -4px rgba(0,0,0,0.05)'],
+      ['Height', '100% (fills grid row)'],
+      ['—', ''],
+      ['Internal layout', ''],
+      ['  Display', 'grid'],
+      ['  Columns', 'repeat(N, 1fr) — N = content cols'],
+      ['  Column gap', '92px (= gridGap 28 + 2×padding 32)'],
+      ['  Row gap', '48px (between subsection layers)'],
+      ['  Padding', '32px (all sides)'],
+      ['—', ''],
+      ['Spacing to neighbors', ''],
+      ['  ↑ from product header', '0px (grid row 2 follows row 1)'],
+      ['  ← → between cards', '28px (grid column gap)'],
+      ['  ↓ to next section row', '40px (grid row gap)'],
+      ['—', ''],
+      ['Hover state', ''],
+      ['  Background', 'linear-gradient(to bottom)'],
+      ['    Top', 'rgb(255 255 255 / 0.90) at 0%'],
+      ['    Fade start', '30%'],
+      ['    Bottom', 'rgb(255 255 255 / 0.70) at 100%'],
+      ['  Shadow', '0 6px 11px -3px rgba(0,0,0,0.0675)'],
+      ['  Scale', 'scaleX(1.008) scaleY(1.02)'],
+      ['  Content counter-scale', 'scaleX(0.992) scaleY(0.980)'],
+      ['—', ''],
+      ['Hover animation', ''],
+      ['  Enter easing', 'cubic-bezier(0.25, 1.4, 0.55, 1)'],
+      ['  Enter transform', '800ms'],
+      ['  Enter bg/shadow', '300ms'],
+      ['  Leave easing', 'cubic-bezier(0.4, 0.06, 0.2, 1)'],
+      ['  Leave transform', '450ms'],
+      ['  Leave bg/shadow', '300ms'],
+      ['  Disabled below', '768px width'],
+    ],
+  },
+  'subsection-header': {
+    title: 'Subsection Header (e.g. "INFRASTRUCTURE")',
+    specs: [
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Font size', '12px'],
+      ['Font weight', '700 (Bold)'],
+      ['Line height', '20px'],
+      ['Letter spacing', '0.5px'],
+      ['Text transform', 'uppercase'],
+      ['Color', 'rgba(28, 43, 52, 0.68)'],
+      ['—', ''],
+      ['Spacing', ''],
+      ['  Parent flex gap', '20px (subsection-header + links in same flex col)'],
+      ['  ↓ to first link', '20px (flex gap)'],
+      ['  Between subsection columns', '92px (card internal column gap)'],
+      ['  Between subsection layers', '48px (card internal row gap)'],
+    ],
+  },
+  'link': {
+    title: 'Link Item',
+    specs: [
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Font size', '16px'],
+      ['Font weight', '400 (Regular)'],
+      ['Line height', '150% (24px)'],
+      ['Color (default)', '#5e6dd6 (indigo-500)'],
+      ['Color (hover)', '#3F4CA5 (indigo-600)'],
+      ['Text decoration', 'none (no underline)'],
+      ['Word break', 'break-words'],
+      ['—', ''],
+      ['Spacing', ''],
+      ['  Link → link gap', '20px (parent flex gap)'],
+      ['  Link text → description', '2px (flex gap on wrapper)'],
+      ['  ↑ from subsection header', '20px (flex gap)'],
+      ['—', ''],
+      ['Arrow icon', ''],
+      ['  Size', '16 × 16px'],
+      ['  Display', 'inline-flex, align: middle'],
+      ['  Margin left', '6px (ml-1.5)'],
+      ['  Default state', 'opacity: 0, translateX: -8px'],
+      ['  Hover state', 'opacity: 1, translateX: 0'],
+      ['  Transition', '200ms ease-out (all)'],
+      ['  Last word + arrow', 'white-space: nowrap (prevents orphan)'],
+    ],
+  },
+  'description': {
+    title: 'Description Text / Tooltip',
+    specs: [
+      ['Font family', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+      ['Color', 'rgba(28, 43, 52, 0.68)'],
+      ['Font weight', '400 (Regular)'],
+      ['Line height', '150%'],
+      ['—', ''],
+      ['Inline mode (always/section-hover)', ''],
+      ['  Font size', '16px'],
+      ['  Color', 'rgba(28, 43, 52, 0.68)'],
+      ['  Gap above (from link)', '2px'],
+      ['—', ''],
+      ['Section-hover animation', ''],
+      ['  Transition', '250ms ease-out'],
+      ['  Transform', 'translateY(-4px) → translateY(0)'],
+      ['  Opacity', '0 → 1'],
+      ['—', ''],
+      ['Tooltip mode (hover-link)', ''],
+      ['  Font size', '14px'],
+      ['  Color', 'rgba(28, 43, 52, 0.85)'],
+      ['  Background', '#ffffff'],
+      ['  Border', '1px solid rgba(0,0,0,0.08)'],
+      ['  Border radius', '6px'],
+      ['  Box shadow', '0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)'],
+      ['  Padding', '8px 12px'],
+      ['  Max width', '280px'],
+      ['  Position', 'absolute, top: 100%'],
+      ['  Offset', 'marginTop: 4px, left: -12px'],
+      ['  Pointer events', 'none'],
+      ['  Transition', '200ms ease-out'],
+      ['  Transform', 'translateY(-8px) → translateY(0)'],
+      ['  Opacity', '0 → 1'],
     ],
   },
 };
@@ -2086,11 +2176,12 @@ export default function App() {
           {/* Top breakpoint bar */}
           {showPanel && (
             <div data-toolbar="true" style={{
-              position: 'fixed', top: 0, left: 0, right: showPanel ? 320 : 0, zIndex: 99990,
+              position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99990,
               display: 'flex', justifyContent: 'center', padding: '8px 16px',
               fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+              pointerEvents: 'none',
             }}>
-              <div style={{ display: 'flex', gap: 2, background: 'rgba(20,20,28,0.85)', backdropFilter: 'blur(12px)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', gap: 2, background: 'rgba(20,20,28,0.85)', backdropFilter: 'blur(12px)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.08)', pointerEvents: 'auto' }}>
                 {BREAKPOINTS.map(bp => {
                   const isActive = bp.width === 0 ? viewportWidth === 0 : viewportWidth === bp.width;
                   return (
@@ -2108,8 +2199,8 @@ export default function App() {
             </div>
           )}
 
-          {/* Right panel */}
-          {showPanel && (
+          {/* Right panel — only visible in Dev/inspect mode */}
+          {viewMode === 'dev' && showPanel && (
             <div data-inspect-panel style={{
               position: 'fixed', top: 0, right: 0, bottom: 0, width: 320, zIndex: 99990,
               background: 'rgba(20, 20, 28, 0.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
@@ -2117,90 +2208,48 @@ export default function App() {
               display: 'flex', flexDirection: 'column',
               fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
             }}>
-              {/* Panel header with mode context */}
               <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
-                    {viewMode === 'design' ? 'Controls' : 'Inspect'}
-                  </span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>⌘⇧. to hide</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Inspect</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>Esc to deselect</span>
                 </div>
               </div>
-
-              {/* Panel content */}
               <div style={{ padding: 16, overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {viewMode === 'design' ? (
-                  <>
-                    {/* Links per subsection */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Links per subsection</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '4px 8px', width: 'fit-content' }}>
-                        <button onClick={() => setExtraLinksPerSub(v => Math.max(1, v - 1))} style={engStepperStyle}>−</button>
-                        <span style={{ width: 24, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 13 }}>{extraLinksPerSub}</span>
-                        <button onClick={() => setExtraLinksPerSub(v => Math.min(20, v + 1))} style={engStepperStyle}>+</button>
-                      </div>
-                    </div>
-                    {/* Height threshold */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Height threshold</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '4px 8px', width: 'fit-content' }}>
-                        <button onClick={() => setHeightThreshold(v => Math.max(1.2, Math.round((v - 0.1) * 10) / 10))} style={engStepperStyle}>−</button>
-                        <span style={{ width: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 13 }}>{heightThreshold.toFixed(1)}</span>
-                        <button onClick={() => setHeightThreshold(v => Math.min(5.0, Math.round((v + 0.1) * 10) / 10))} style={engStepperStyle}>+</button>
-                      </div>
-                    </div>
-                    {/* Extra subsections */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Extra subsections</span>
-                      {ALL_SECTION_KEYS.map((key) => (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{SECTION_LABELS[key]}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 4, padding: '2px 6px' }}>
-                            <button onClick={() => setExtraSubsFor(key, Math.max(0, (extraSubs[key] || 0) - 1))} style={engStepperStyle}>−</button>
-                            <span style={{ width: 14, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: '#fff', fontSize: 12 }}>{extraSubs[key] || 0}</span>
-                            <button onClick={() => setExtraSubsFor(key, Math.min(15, (extraSubs[key] || 0) + 1))} style={engStepperStyle}>+</button>
-                          </div>
+                {inspectedSpec.spec ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>{inspectedSpec.spec.title}</div>
+                    {inspectedSpec.spec.specs.map(([label, value], i) => {
+                      if (label === '—') return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />;
+                      if (!value) return <div key={i} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{label}</div>;
+                      return (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{label}</span>
+                          <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace', textAlign: 'right' }}>{value}</span>
                         </div>
-                      ))}
-                    </div>
-                  </>
+                      );
+                    })}
+                    {inspectedSpec.box && (
+                      <>
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Computed</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Size</span>
+                          <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.width)} × {Math.round(inspectedSpec.box.height)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Position</span>
+                          <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.left)}, {Math.round(inspectedSpec.box.top + window.scrollY)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ) : (
-                  inspectedSpec.spec ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>{inspectedSpec.spec.title}</div>
-                      {inspectedSpec.spec.specs.map(([label, value], i) => {
-                        if (label === '—') return <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />;
-                        if (!value) return <div key={i} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>{label}</div>;
-                        return (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>{label}</span>
-                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace', textAlign: 'right' }}>{value}</span>
-                          </div>
-                        );
-                      })}
-                      {inspectedSpec.box && (
-                        <>
-                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', margin: '2px 0' }} />
-                          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Computed</div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Size</span>
-                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.width)} × {Math.round(inspectedSpec.box.height)}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Position</span>
-                            <span style={{ fontSize: 11, color: '#fff', fontFamily: 'SF Mono, Menlo, monospace' }}>{Math.round(inspectedSpec.box.left)}, {Math.round(inspectedSpec.box.top + window.scrollY)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '32px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 32, opacity: 0.3 }}>⊹</div>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
-                        Hover over elements to highlight.<br />Click to see specs.
-                      </span>
-                    </div>
-                  )
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '32px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 32, opacity: 0.3 }}>⊹</div>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+                      Hover over elements to highlight.<br />Click to see specs.
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -2265,7 +2314,7 @@ export default function App() {
                   width: `${b.width * s}%`,
                   height: `${b.height * s}%`,
                   borderRadius: '50%',
-                  background: (conceptParam === '2' || conceptParam === '4')
+                  background: (isEngHandoff || conceptParam === '2' || conceptParam === '4')
                     ? `radial-gradient(ellipse at center, ${b.color} 0%, ${b.color}66 25%, ${b.color}22 55%, transparent 80%)`
                     : `radial-gradient(ellipse at center, ${b.color} 0%, transparent 70%)`,
                   opacity: (b.opacity / 100) * (designVars.blobOpacity / 100),
